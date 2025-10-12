@@ -1,0 +1,20 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "慢性病管理模块"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "慢性病管理应用"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "慢性病管理"
+    },
+    {
+      "name": "permission_reminder_reason",
+      "value": "需要设置用药提醒，确保您按时服药"
+    }
+  ]
+}

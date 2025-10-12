@@ -1,0 +1,56 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BF41F0957F1440504BCE3B562A92864F68256DD85E40D51C7ED7B9B6F5252D6CBE460246720B99B",
+          "profile": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.p12",
+          "storePassword": "0000001B704D73D4AA6E3889F9BA941E61AF75247F42FF82C371379E187B71BEAA0CFAB2B2E2732F7A41DA"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "5.0.0(12)",
+        "compatibleSdkVersion": "5.0.0(12)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

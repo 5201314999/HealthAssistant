@@ -1,0 +1,10 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/GuidePage",
+    "pages/DiseaseManagePage",
+    "pages/DataEntryPage",
+    "pages/MedicineManagePage",
+    "pages/AddMedicinePage"
+  ]
+}
