@@ -2,15 +2,15 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "慢性病管理模块"
+      "value": "慢性病助手模块"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "慢性病管理应用"
+      "value": "慢性病助手应用"
     },
     {
       "name": "EntryAbility_label",
-      "value": "慢性病管理"
+      "value": "慢性病助手"
     },
     {
       "name": "permission_reminder_reason",

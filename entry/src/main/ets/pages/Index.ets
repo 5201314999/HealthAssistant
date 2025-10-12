@@ -53,7 +53,7 @@ struct Index {
       // 美化标题栏 - 添加渐变背景
       Row() {
         Column() {
-          Text("慢性病管理助手")
+          Text("慢性病助手助手")
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
             .fontColor('#FFFFFF')
@@ -130,9 +130,9 @@ struct Index {
             })
           }
 
-          // 慢性病管理区域
+          // 慢性病助手区域
           Column({ space: 12 }) {
-            Text('慢性病管理')
+            Text('慢性病助手')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .alignSelf(ItemAlign.Start)
