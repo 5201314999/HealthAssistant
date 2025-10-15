@@ -5,7 +5,7 @@
 
 import { preferences } from '@kit.ArkData';
 import { HealthRecord, HealthRecordJSON } from '../models/DiseaseTemplate';
-import { MedicineData, MedicineRecord } from '../models/MedicineData';
+import { MedicineData, MedicineRecord, MedicineDataJSON } from '../models/MedicineData';
 
 const PREFERENCES_NAME = 'medical_assistant_data_v2';
 
@@ -98,14 +98,58 @@ export class HealthDataManager {
     const records = await this.getHealthRecords(templateId);
     return records.length;
   }
+
+  /**
+   * 获取最新的健康记录
+   */
+  async getLatestHealthRecord(templateId: string, groupId?: string): Promise<HealthRecord | null> {
+    const records = await this.getHealthRecords(templateId, groupId);
+    if (records.length === 0) {
+      return null;
+    }
+    // 按日期降序排序，返回最新的记录
+    records.sort((a: HealthRecord, b: HealthRecord) => b.date - a.date);
+    return records[0];
+  }
+
+  /**
+   * 获取所有有数据的疾病模板ID
+   */
+  async getActiveDiseaseTemplates(): Promise<string[]> {
+    try {
+      const dataStr = await this.dataPreferences?.get('active_disease_templates', '[]') as string;
+      return JSON.parse(dataStr) as string[];
+    } catch (err) {
+      console.error('Failed to get active disease templates:', JSON.stringify(err));
+      return [];
+    }
+  }
+  
+  /**
+   * 激活疾病模板（添加到活跃列表）
+   */
+  async activateDiseaseTemplate(templateId: string): Promise<void> {
+    try {
+      const activeTemplates = await this.getActiveDiseaseTemplates();
+      if (!activeTemplates.includes(templateId)) {
+        activeTemplates.push(templateId);
+        await this.dataPreferences?.put('active_disease_templates', JSON.stringify(activeTemplates));
+        await this.dataPreferences?.flush();
+      }
+    } catch (err) {
+      console.error('Failed to activate disease template:', JSON.stringify(err));
+    }
+  }
   
   // ========== 药品管理（保持不变）==========
   
   async getMedicineList(): Promise<MedicineData[]> {
     try {
       const dataStr = await this.dataPreferences?.get('medicine_list', '[]') as string;
-      return JSON.parse(dataStr);
+      const jsonArray = JSON.parse(dataStr) as MedicineDataJSON[];
+      return jsonArray.map((json: MedicineDataJSON) => MedicineData.fromJSON(json));
     } catch (err) {
+      console.error('Failed to get medicine list:', JSON.stringify(err));
       return [];
     }
   }
@@ -118,14 +162,16 @@ export class HealthDataManager {
     } else {
       list.push(data);
     }
-    await this.dataPreferences?.put('medicine_list', JSON.stringify(list));
+    const jsonArray = list.map((medicine: MedicineData) => medicine.toJSON());
+    await this.dataPreferences?.put('medicine_list', JSON.stringify(jsonArray));
     await this.dataPreferences?.flush();
   }
   
   async deleteMedicine(id: string): Promise<void> {
     const list = await this.getMedicineList();
     const filtered = list.filter(item => item.id !== id);
-    await this.dataPreferences?.put('medicine_list', JSON.stringify(filtered));
+    const jsonArray = filtered.map((medicine: MedicineData) => medicine.toJSON());
+    await this.dataPreferences?.put('medicine_list', JSON.stringify(jsonArray));
     await this.dataPreferences?.flush();
   }
   

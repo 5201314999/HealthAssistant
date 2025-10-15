@@ -5,6 +5,7 @@ export class MedicineData {
   specification: string = ''; // 规格
   dosage: string = ''; // 用法用量
   frequency: string[] = []; // 服用时间 ['morning', 'noon', 'evening', 'bedtime']
+  reminderTimes: Map<string, RemindTime> = new Map(); // 每个时段的具体提醒时间
   startDate: number = 0;
   endDate: number = 0;
   stock: number = 0; // 库存数量
@@ -15,6 +16,60 @@ export class MedicineData {
     this.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
     this.startDate = Date.now();
     this.endDate = Date.now() + 30 * 24 * 60 * 60 * 1000; // 默认30天
+    // 初始化默认提醒时间
+    this.reminderTimes.set('morning', { hour: 8, minute: 0 });
+    this.reminderTimes.set('noon', { hour: 12, minute: 0 });
+    this.reminderTimes.set('evening', { hour: 18, minute: 0 });
+    this.reminderTimes.set('bedtime', { hour: 22, minute: 0 });
+  }
+
+  // 序列化为 JSON
+  toJSON(): MedicineDataJSON {
+    const reminderTimesObj: Record<string, RemindTime> = {};
+    this.reminderTimes.forEach((value: RemindTime, key: string) => {
+      reminderTimesObj[key] = value;
+    });
+
+    const result: MedicineDataJSON = {
+      id: this.id,
+      name: this.name,
+      specification: this.specification,
+      dosage: this.dosage,
+      frequency: this.frequency,
+      reminderTimesObj: reminderTimesObj,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      stock: this.stock,
+      note: this.note,
+      reminderEnabled: this.reminderEnabled
+    };
+    return result;
+  }
+
+  // 从 JSON 反序列化
+  static fromJSON(json: MedicineDataJSON): MedicineData {
+    const medicine = new MedicineData();
+    medicine.id = json.id;
+    medicine.name = json.name;
+    medicine.specification = json.specification;
+    medicine.dosage = json.dosage;
+    medicine.frequency = json.frequency;
+    medicine.startDate = json.startDate;
+    medicine.endDate = json.endDate;
+    medicine.stock = json.stock;
+    medicine.note = json.note;
+    medicine.reminderEnabled = json.reminderEnabled;
+
+    // 处理 reminderTimes
+    const reminderTimesObj = json.reminderTimesObj;
+    if (reminderTimesObj) {
+      medicine.reminderTimes = new Map();
+      Object.keys(reminderTimesObj).forEach((key: string) => {
+        medicine.reminderTimes.set(key, reminderTimesObj[key]);
+      });
+    }
+
+    return medicine;
   }
 }
 
@@ -58,5 +113,20 @@ export const TIME_NAMES: TimeNamesMap = {
 export interface RemindTime {
   hour: number,
   minute: number
+}
+
+// 药品数据 JSON 接口
+export interface MedicineDataJSON {
+  id: string;
+  name: string;
+  specification: string;
+  dosage: string;
+  frequency: string[];
+  reminderTimesObj: Record<string, RemindTime>;
+  startDate: number;
+  endDate: number;
+  stock: number;
+  note: string;
+  reminderEnabled: boolean;
 }
 

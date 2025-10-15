@@ -53,7 +53,7 @@ struct Index {
       // 美化标题栏 - 添加渐变背景
       Row() {
         Column() {
-          Text("慢性病助手助手")
+          Text("慢性病助手")
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
             .fontColor('#FFFFFF')

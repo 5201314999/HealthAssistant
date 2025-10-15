@@ -71,6 +71,46 @@ struct DataEntryPage {
     router.back();
   }
 
+  // 显示日期时间选择器
+  showDateTimePicker() {
+    const selectedDate = new Date(this.checkTime);
+    
+    DatePickerDialog.show({
+      start: new Date('1900-1-1'),
+      end: new Date(),
+      selected: selectedDate,
+      lunar: false,
+      onAccept: (value: DatePickerResult) => {
+        // 保存选择的日期，然后打开时间选择器
+        const year = value.year as number;
+        const month = value.month as number;
+        const day = value.day as number;
+        const hour = selectedDate.getHours();
+        const minute = selectedDate.getMinutes();
+        
+        // 创建临时日期对象，保留原有的时间部分
+        const tempDate = new Date(year, month, day, hour, minute);
+        
+        // 打开时间选择器
+        TimePickerDialog.show({
+          selected: selectedDate,
+          useMilitaryTime: true,
+          onAccept: (timeValue: TimePickerResult) => {
+            // 合并日期和时间
+            const finalDate = new Date(
+              year,
+              month,
+              day,
+              timeValue.hour as number,
+              timeValue.minute as number
+            );
+            this.checkTime = finalDate.getTime();
+          }
+        });
+      }
+    });
+  }
+
   build() {
     Column() {
       // 导航栏
@@ -88,12 +128,9 @@ struct DataEntryPage {
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
 
-        Text('保存')
-          .fontSize(16)
-          .fontColor(this.template?.color || '#4CAF50')
-          .onClick(() => {
-            this.saveData();
-          })
+        // 占位元素保持标题居中
+        Row()
+          .width(24)
       }
       .width('100%')
       .height(56)
@@ -170,8 +207,7 @@ struct DataEntryPage {
                   .fontSize(14)
                   .fontColor(this.template?.color || '#4CAF50')
                   .onClick(() => {
-                    // TODO: 打开时间选择器
-                    this.checkTime = Date.now();
+                    this.showDateTimePicker();
                   })
               }
               .width('100%')
@@ -245,10 +281,32 @@ struct DataEntryPage {
             offsetY: 2
           })
         }
-        .padding({ bottom: 20 })
+        .padding({ bottom: 80 })
       }
       .layoutWeight(1)
       .backgroundColor('#F5F5F5')
+
+      // 底部保存按钮
+      Column() {
+        Button('保存')
+          .width('100%')
+          .height(48)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .backgroundColor(this.template?.color || '#4CAF50')
+          .borderRadius(24)
+          .onClick(() => {
+            this.saveData();
+          })
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+      .backgroundColor('#FFFFFF')
+      .shadow({
+        radius: 8,
+        color: '#10000000',
+        offsetY: -2
+      })
     }
     .width('100%')
     .height('100%')

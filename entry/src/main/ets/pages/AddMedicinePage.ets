@@ -11,10 +11,27 @@ struct AddMedicinePage {
   @State specification: string = '';
   @State dosage: string = '';
   @State frequency: string[] = [];
+  @State reminderTimes: Map<string, RemindTime> = this.getDefaultReminderTimes();
   @State stock: string = '';
   @State startDate: number = Date.now();
   @State endDate: number = Date.now() + 30 * 24 * 60 * 60 * 1000;
   @State note: string = '';
+
+  // 获取默认提醒时间
+  getDefaultReminderTimes(): Map<string, RemindTime> {
+    const map = new Map<string, RemindTime>();
+    const morningTime: RemindTime = { hour: 8, minute: 0 };
+    const noonTime: RemindTime = { hour: 12, minute: 0 };
+    const eveningTime: RemindTime = { hour: 18, minute: 0 };
+    const bedtimeTime: RemindTime = { hour: 22, minute: 0 };
+    
+    map.set('morning', morningTime);
+    map.set('noon', noonTime);
+    map.set('evening', eveningTime);
+    map.set('bedtime', bedtimeTime);
+    
+    return map;
+  }
 
   async saveData() {
     if (!this.medicineName) {
@@ -32,6 +49,7 @@ struct AddMedicinePage {
     medicine.specification = this.specification;
     medicine.dosage = this.dosage;
     medicine.frequency = this.frequency;
+    medicine.reminderTimes = new Map(this.reminderTimes);
     medicine.stock = this.stock ? parseInt(this.stock) : 0;
     medicine.startDate = this.startDate;
     medicine.endDate = this.endDate;
@@ -51,18 +69,38 @@ struct AddMedicinePage {
 
   // 获取服用时间对应的小时和分钟
   getReminderTime(timeSlot: string): RemindTime {
-    switch (timeSlot) {
-      case 'morning':
-        return { hour: 8, minute: 0 };
-      case 'noon':
-        return { hour: 12, minute: 0 };
-      case 'evening':
-        return { hour: 18, minute: 0 };
-      case 'bedtime':
-        return { hour: 22, minute: 0 };
-      default:
-        return { hour: 8, minute: 0 };
-    }
+    const time = this.reminderTimes.get(timeSlot);
+    return time || { hour: 8, minute: 0 };
+  }
+
+  // 显示时间选择器
+  showTimePickerForSlot(timeSlot: string) {
+    const currentTime = this.reminderTimes.get(timeSlot) || { hour: 8, minute: 0 };
+    const selectedDate = new Date();
+    selectedDate.setHours(currentTime.hour, currentTime.minute);
+
+    TimePickerDialog.show({
+      selected: selectedDate,
+      useMilitaryTime: true,
+      onAccept: (value: TimePickerResult) => {
+        const newTime: RemindTime = {
+          hour: value.hour as number,
+          minute: value.minute as number
+        };
+        this.reminderTimes.set(timeSlot, newTime);
+        this.reminderTimes = new Map(this.reminderTimes); // 触发UI更新
+        promptAction.showToast({ 
+          message: `已设置为 ${String(newTime.hour).padStart(2, '0')}:${String(newTime.minute).padStart(2, '0')}` 
+        });
+      }
+    });
+  }
+
+  // 格式化时间显示
+  formatTime(timeSlot: string): string {
+    const time = this.reminderTimes.get(timeSlot);
+    if (!time) return '';
+    return `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
   }
 
   // 创建用药提醒
@@ -98,6 +136,51 @@ struct AddMedicinePage {
     this.frequency = [...this.frequency];
   }
 
+  // 显示开始日期选择器
+  showStartDatePicker() {
+    DatePickerDialog.show({
+      start: new Date(),
+      end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
+      selected: new Date(this.startDate),
+      lunar: false,
+      onAccept: (value: DatePickerResult) => {
+        const year = value.year as number;
+        const month = value.month as number;
+        const day = value.day as number;
+        this.startDate = new Date(year, month, day).getTime();
+        
+        // 如果开始日期大于结束日期，自动调整结束日期
+        if (this.startDate > this.endDate) {
+          this.endDate = this.startDate + 30 * 24 * 60 * 60 * 1000; // 默认30天后
+        }
+      }
+    });
+  }
+
+  // 显示结束日期选择器
+  showEndDatePicker() {
+    DatePickerDialog.show({
+      start: new Date(this.startDate),
+      end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
+      selected: new Date(this.endDate),
+      lunar: false,
+      onAccept: (value: DatePickerResult) => {
+        const year = value.year as number;
+        const month = value.month as number;
+        const day = value.day as number;
+        this.endDate = new Date(year, month, day).getTime();
+        
+        // 如果结束日期小于开始日期，自动调整开始日期
+        if (this.endDate < this.startDate) {
+          this.startDate = this.endDate - 30 * 24 * 60 * 60 * 1000; // 默认30天前
+          if (this.startDate < Date.now()) {
+            this.startDate = Date.now();
+          }
+        }
+      }
+    });
+  }
+
   build() {
     Column() {
       // 导航栏
@@ -115,12 +198,9 @@ struct AddMedicinePage {
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
 
-        Text('保存')
-          .fontSize(16)
-          .fontColor('#FF9800')
-          .onClick(() => {
-            this.saveData();
-          })
+        // 占位元素保持标题居中
+        Row()
+          .width(24)
       }
       .width('100%')
       .height(56)
@@ -208,22 +288,11 @@ struct AddMedicinePage {
               .fontColor('#1F1F1F')
               .alignSelf(ItemAlign.Start)
 
-            Row({ space: 12 }) {
-              this.TimeButton('早上', this.frequency.includes('morning'), () => {
-                this.toggleFrequency('morning');
-              })
-
-              this.TimeButton('中午', this.frequency.includes('noon'), () => {
-                this.toggleFrequency('noon');
-              })
-
-              this.TimeButton('晚上', this.frequency.includes('evening'), () => {
-                this.toggleFrequency('evening');
-              })
-
-              this.TimeButton('睡前', this.frequency.includes('bedtime'), () => {
-                this.toggleFrequency('bedtime');
-              })
+            Column({ space: 8 }) {
+              this.TimeCard('早上', 'morning', this.frequency.includes('morning'))
+              this.TimeCard('中午', 'noon', this.frequency.includes('noon'))
+              this.TimeCard('晚上', 'evening', this.frequency.includes('evening'))
+              this.TimeCard('睡前', 'bedtime', this.frequency.includes('bedtime'))
             }
             .width('100%')
           }
@@ -252,8 +321,7 @@ struct AddMedicinePage {
                 .fontColor('#2196F3')
                 .layoutWeight(1)
                 .onClick(() => {
-                  // 这里可以打开日期选择器
-                  promptAction.showToast({ message: '日期选择功能待完善' });
+                  this.showStartDatePicker();
                 })
             }
             .width('100%')
@@ -269,8 +337,7 @@ struct AddMedicinePage {
                 .fontColor('#2196F3')
                 .layoutWeight(1)
                 .onClick(() => {
-                  // 这里可以打开日期选择器
-                  promptAction.showToast({ message: '日期选择功能待完善' });
+                  this.showEndDatePicker();
                 })
             }
             .width('100%')
@@ -338,26 +405,76 @@ struct AddMedicinePage {
           .borderRadius(12)
           .margin({ left: 16, right: 16 })
         }
-        .padding({ bottom: 20 })
+        .padding({ bottom: 80 })
       }
       .layoutWeight(1)
       .backgroundColor('#F5F5F5')
+
+      // 底部保存按钮
+      Column() {
+        Button('保存')
+          .width('100%')
+          .height(48)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .backgroundColor('#FF9800')
+          .borderRadius(24)
+          .onClick(() => {
+            this.saveData();
+          })
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+      .backgroundColor('#FFFFFF')
+      .shadow({
+        radius: 8,
+        color: '#10000000',
+        offsetY: -2
+      })
     }
     .width('100%')
     .height('100%')
   }
 
   @Builder
-  TimeButton(text: string, selected: boolean, onClick: () => void) {
-    Text(text)
-      .fontSize(14)
-      .fontColor(selected ? '#FFFFFF' : '#FF9800')
-      .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-      .backgroundColor(selected ? '#FF9800' : '#FFF3E0')
-      .borderRadius(16)
-      .onClick(onClick)
+  TimeCard(text: string, timeSlot: string, selected: boolean) {
+    Row() {
+      Checkbox()
+        .select(selected)
+        .onChange((value: boolean) => {
+          this.toggleFrequency(timeSlot);
+        })
+        .margin({ right: 12 })
+
+      Column({ space: 4 }) {
+        Text(text)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#1F1F1F')
+        
+        Text(this.formatTime(timeSlot))
+          .fontSize(12)
+          .fontColor('#757575')
+      }
+      .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
-      .textAlign(TextAlign.Center)
+
+      Button('设置时间')
+        .fontSize(14)
+        .height(32)
+        .backgroundColor(selected ? '#FF9800' : '#E0E0E0')
+        .fontColor(selected ? '#FFFFFF' : '#9E9E9E')
+        .enabled(selected)
+        .onClick(() => {
+          if (selected) {
+            this.showTimePickerForSlot(timeSlot);
+          }
+        })
+    }
+    .width('100%')
+    .padding(12)
+    .backgroundColor('#F5F5F5')
+    .borderRadius(8)
   }
 }
 

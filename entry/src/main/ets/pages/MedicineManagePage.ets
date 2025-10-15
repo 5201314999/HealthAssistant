@@ -1,6 +1,6 @@
 import  router  from '@ohos.router';
 import { HealthDataManager } from '../utils/HealthDataManager';
-import { MedicineData, MedicineRecord, TIME_NAMES } from '../models/MedicineData';
+import { MedicineData, MedicineRecord, TIME_NAMES, RemindTime } from '../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../utils/NotificationManager';
 
@@ -105,10 +105,22 @@ struct MedicineManagePage {
           .fontColor('#9E9E9E')
           .margin({ top: 16 })
         
-        Text('请先在"药品列表"中添加药品')
+        Text('添加药品后会自动生成用药记录')
           .fontSize(14)
           .fontColor('#BDBDBD')
           .margin({ top: 8 })
+        
+        Button('添加药品')
+          .width(200)
+          .height(48)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .backgroundColor('#FF9800')
+          .borderRadius(24)
+          .margin({ top: 40 })
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/AddMedicinePage' });
+          })
       }
       .width('100%')
       .height('100%')
@@ -292,9 +304,19 @@ struct MedicineManagePage {
           .fontSize(12)
           .fontColor('#757575')
         
-        Text(medicine.frequency.map((f: string) => this.getTimeName(f)).join('、'))
+        Text(medicine.frequency.map((f: string) => {
+          const timeName = this.getTimeName(f);
+          const reminderTime = medicine.reminderTimes.get(f);
+          if (reminderTime) {
+            const hour = String(reminderTime.hour).padStart(2, '0');
+            const minute = String(reminderTime.minute).padStart(2, '0');
+            return `${timeName}(${hour}:${minute})`;
+          }
+          return timeName;
+        }).join('、'))
           .fontSize(12)
-          .fontColor('#2196F3')
+          .fontColor($r('app.color.primary'))
+          .fontColor($r('app.color.primary'))
       }
       .width('100%')
 

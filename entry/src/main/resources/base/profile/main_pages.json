@@ -1,10 +1,17 @@
 {
   "src": [
+    "pages/MainPage",
+    "pages/HomePage",
+    "pages/ProfilePage",
     "pages/Index",
     "pages/GuidePage",
     "pages/DiseaseManagePage",
     "pages/DataEntryPage",
     "pages/MedicineManagePage",
-    "pages/AddMedicinePage"
+    "pages/AddMedicinePage",
+    "pages/AddDiseasePage",
+    "pages/AddMedicalRecordPage",
+    "pages/MedicalRecordsPage",
+    "pages/MedicalRecordDetailPage"
   ]
 }

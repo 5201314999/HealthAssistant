@@ -3,6 +3,14 @@
     {
       "name": "start_window_background",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "primary",
+      "value": "#3b82f6"
+    },
+    {
+      "name": "primary_weak",
+      "value": "#E8F0FE"
     }
   ]
 }

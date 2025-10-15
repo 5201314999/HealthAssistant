@@ -77,7 +77,7 @@ function createThyroidTemplate(): DiseaseTemplate {
 
 // 创建糖尿病管理模板
 function createDiabetesTemplate(): DiseaseTemplate {
-  const template = new DiseaseTemplate('diabetes', '糖尿病管理', '#2196F3');
+  const template = new DiseaseTemplate('diabetes', '糖尿病', '#FFA726');
   template.description = '记录血糖与糖化指标';
   template.icon = 'sys.media.ohos_ic_public_health';
   
@@ -125,6 +125,44 @@ function createDiabetesTemplate(): DiseaseTemplate {
   return template;
 }
 
+// 创建高血压管理模板
+function createHypertensionTemplate(): DiseaseTemplate {
+  const template = new DiseaseTemplate('hypertension', '高血压', '#EF5350');
+  template.description = '记录血压数据';
+  template.icon = 'sys.media.ohos_ic_public_health';
+  
+  // 血压监测
+  const bloodPressure = new IndicatorGroup('blood_pressure', '血压监测', '日常血压值记录');
+  
+  const systolic = new IndicatorDefinition('systolic', '收缩压', '高压');
+  systolic.type = IndicatorType.NUMBER;
+  systolic.unit = 'mmHg';
+  systolic.referenceMin = 90;
+  systolic.referenceMax = 120;
+  systolic.warningLevels = [
+    { level: 'normal', min: 90, max: 120, label: '正常' },
+    { level: 'warning', min: 120, max: 140, label: '正常高值' },
+    { level: 'danger', min: 140, label: '高血压' }
+  ];
+  
+  const diastolic = new IndicatorDefinition('diastolic', '舒张压', '低压');
+  diastolic.type = IndicatorType.NUMBER;
+  diastolic.unit = 'mmHg';
+  diastolic.referenceMin = 60;
+  diastolic.referenceMax = 80;
+  diastolic.warningLevels = [
+    { level: 'normal', min: 60, max: 80, label: '正常' },
+    { level: 'warning', min: 80, max: 90, label: '正常高值' },
+    { level: 'danger', min: 90, label: '高血压' }
+  ];
+  
+  bloodPressure.indicators = [systolic, diastolic];
+  
+  template.indicatorGroups = [bloodPressure];
+  
+  return template;
+}
+
 // 导出所有内置模板
 export class BuiltInTemplates {
   private static templates: DiseaseTemplate[] = [];
@@ -132,8 +170,9 @@ export class BuiltInTemplates {
   private static init(): void {
     if (BuiltInTemplates.templates.length === 0) {
       BuiltInTemplates.templates = [
-        createThyroidTemplate(),
-        createDiabetesTemplate()
+        createHypertensionTemplate(),
+        createDiabetesTemplate(),
+        createThyroidTemplate()
       ];
     }
   }
