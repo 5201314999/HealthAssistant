@@ -4,15 +4,22 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate, HealthRecord } from '../models/DiseaseTemplate';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
 
+
+
+interface TemplateShow {
+  value: string;
+  text:string;
+}
 @Entry
 @Component
 struct AddMedicalRecordPage {
   @State templates: DiseaseTemplate[] = [];
   @State selectedTemplateId: string = '';
+  @State selectedIndex:number=0;
   @State visitDate: number = Date.now();
   @State hospital: string = '';
   @State doctor: string = '';
@@ -34,22 +41,18 @@ struct AddMedicalRecordPage {
     // 默认选中第一个模板
     if (this.templates.length > 0) {
       this.selectedTemplateId = this.templates[0].id;
+      this.selectedIndex=0
     }
   }
 
   // 显示日期选择器
   showDatePicker() {
-    DatePickerDialog.show({
+    this.getUIContext().showDatePickerDialog({
       start: new Date('1900-1-1'),
       end: new Date(),
       selected: new Date(this.visitDate),
-      lunar: false,
-      onAccept: (value: DatePickerResult) => {
-        const year = value.year as number;
-        const month = value.month as number;
-        const day = value.day as number;
-        const date = new Date(year, month, day);
-        this.visitDate = date.getTime();
+      onDateAccept: (value) => {
+        this.visitDate = value.getTime();
       }
     });
   }
@@ -135,14 +138,15 @@ struct AddMedicalRecordPage {
               .width('100%')
               
               if (this.templates.length > 0) {
-                Select(this.templates.map(t => ({ value: t.id, text: t.name })))
-                  .selected(this.selectedTemplateId)
+                Select(this.templates.map(t => ({ value: t.id, text: t.name } as TemplateShow)))
+                  .selected(this.selectedIndex)
                   .value(this.getSelectedTemplateName())
                   .font({ size: 16 })
                   .backgroundColor('#F5F5F5')
                   .borderRadius(8)
                   .onSelect((index: number) => {
                     this.selectedTemplateId = this.templates[index].id;
+                    this.selectedIndex=index
                   })
               } else {
                 Text('暂无疾病，请先添加疾病')

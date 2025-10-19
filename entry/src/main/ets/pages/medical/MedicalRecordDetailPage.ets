@@ -4,9 +4,9 @@
 
 import router from '@ohos.router';
 import { promptAction, AlertDialog } from '@kit.ArkUI';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate, HealthRecord } from '../models/DiseaseTemplate';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
 
 @Entry
 @Component
@@ -55,7 +55,7 @@ struct MedicalRecordDetailPage {
 
   // 删除记录
   showDeleteConfirmDialog() {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除记录',
       message: '确定要删除这条就诊记录吗？删除后无法恢复。',
       primaryButton: {
@@ -95,7 +95,7 @@ struct MedicalRecordDetailPage {
           .textAlign(TextAlign.Center)
 
         // 删除按钮
-        Image($r('sys.media.ohos_ic_public_delete'))
+        Image($r('app.media.delete'))
           .width(24)
           .height(24)
           .onClick(() => {

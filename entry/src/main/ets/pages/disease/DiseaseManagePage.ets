@@ -3,17 +3,17 @@
  * 根据模板ID动态加载对应的疾病数据
  */
 
-import  router  from '@ohos.router';
+import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../utils/HealthDataManager';
+import { HealthDataManager } from '../../utils/HealthDataManager';
 import {
   DiseaseTemplate,
   IndicatorGroup,
   HealthRecord,
   IndicatorDefinition,
   IndicatorOption
-} from '../models/DiseaseTemplate';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
+} from '../../models/DiseaseTemplate';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 
 @Entry
 @Component
@@ -300,7 +300,7 @@ struct DiseaseManagePage {
           .backgroundColor(this.template!.color)
           .onClick(() => {
             router.pushUrl({
-              url: 'pages/DataEntryPage',
+              url: 'pages/common/DataEntryPage',
               params: {
                 templateId: this.template?.id,
                 groupId: this.template!.indicatorGroups[0].id
@@ -324,7 +324,7 @@ struct DiseaseManagePage {
           .opacity(index === 0 ? 1 : 0.8)
           .onClick(() => {
             router.pushUrl({
-              url: 'pages/DataEntryPage',
+              url: 'pages/common/DataEntryPage',
               params: {
                 templateId: this.template?.id,
                 groupId: group.id

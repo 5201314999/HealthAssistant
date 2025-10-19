@@ -1,17 +1,17 @@
 {
   "src": [
-    "pages/MainPage",
-    "pages/HomePage",
-    "pages/ProfilePage",
-    "pages/Index",
-    "pages/GuidePage",
-    "pages/DiseaseManagePage",
-    "pages/DataEntryPage",
-    "pages/MedicineManagePage",
-    "pages/AddMedicinePage",
-    "pages/AddDiseasePage",
-    "pages/AddMedicalRecordPage",
-    "pages/MedicalRecordsPage",
-    "pages/MedicalRecordDetailPage"
+    "pages/common/MainPage",
+    "pages/home/HomePage",
+    "pages/profile/ProfilePage",
+    "pages/home/Index",
+    "pages/common/GuidePage",
+    "pages/disease/DiseaseManagePage",
+    "pages/common/DataEntryPage",
+    "pages/medicine/MedicineManagePage",
+    "pages/medicine/AddMedicinePage",
+    "pages/disease/AddDiseasePage",
+    "pages/medical/AddMedicalRecordPage",
+    "pages/medical/MedicalRecordsPage",
+    "pages/medical/MedicalRecordDetailPage"
   ]
 }

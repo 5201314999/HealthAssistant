@@ -1,4 +1,4 @@
-import  router  from '@ohos.router';
+import router from '@ohos.router';
 
 /**
  * 新手引导页面（占位）
@@ -25,7 +25,7 @@ struct GuidePage {
         .backgroundColor('#4CAF50')
         .margin({ top: 50 })
         .onClick(() => {
-          router.replaceUrl({ url: 'pages/Index' });
+          router.replaceUrl({ url: 'pages/home/Index' });
         })
     }
     .width('100%')

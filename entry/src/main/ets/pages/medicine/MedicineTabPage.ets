@@ -1,8 +1,8 @@
-import  router  from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { MedicineData, MedicineRecord } from '../models/MedicineData';
+import router from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { MedicineData, MedicineRecord } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
-import { NotificationManager } from '../utils/NotificationManager';
+import { NotificationManager } from '../../utils/NotificationManager';
 
 
 @Component
@@ -167,7 +167,7 @@ export struct MedicineTabPage {
                 .height(48)
                 .borderRadius(24)
                 .onClick(() => {
-                  router.pushUrl({ url: 'pages/AddMedicinePage' });
+                  router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
                 })
             }
             .width('100%')
@@ -287,7 +287,7 @@ export struct MedicineTabPage {
               .height(48)
               .borderRadius(24)
               .onClick(() => {
-                router.pushUrl({ url: 'pages/AddMedicinePage' });
+                router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
               })
           }
           .width('100%')
@@ -323,7 +323,7 @@ export struct MedicineTabPage {
               .height(44)
               .borderRadius(22)
               .onClick(() => {
-                router.pushUrl({ url: 'pages/AddMedicinePage' });
+                router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
               })
           }
           .width('100%')

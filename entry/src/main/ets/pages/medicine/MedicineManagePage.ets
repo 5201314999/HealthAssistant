@@ -1,8 +1,8 @@
-import  router  from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { MedicineData, MedicineRecord, TIME_NAMES, RemindTime } from '../models/MedicineData';
+import router from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { MedicineData, MedicineRecord, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
-import { NotificationManager } from '../utils/NotificationManager';
+import { NotificationManager } from '../../utils/NotificationManager';
 
 @Entry
 @Component
@@ -80,7 +80,7 @@ struct MedicineManagePage {
             .width('100%')
             .backgroundColor('#FF9800')
             .onClick(() => {
-              router.pushUrl({ url: 'pages/AddMedicinePage' });
+              router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
             })
         }
         .width('100%')
@@ -119,7 +119,7 @@ struct MedicineManagePage {
           .borderRadius(24)
           .margin({ top: 40 })
           .onClick(() => {
-            router.pushUrl({ url: 'pages/AddMedicinePage' });
+            router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
           })
       }
       .width('100%')

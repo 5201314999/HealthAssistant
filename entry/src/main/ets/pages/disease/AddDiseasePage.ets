@@ -4,9 +4,9 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate } from '../models/DiseaseTemplate';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 
 @Entry
 @Component

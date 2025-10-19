@@ -3,11 +3,12 @@
  * 根据模板和指标组动态生成表单
  */
 
-import  router  from '@ohos.router';
+import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { DiseaseTemplate, IndicatorGroup, HealthRecord, IndicatorDefinition, IndicatorType, IndicatorOption } from '../models/DiseaseTemplate';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { DiseaseTemplate, IndicatorGroup, HealthRecord, IndicatorDefinition, IndicatorType, IndicatorOption } from '../../models/DiseaseTemplate';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import common from '@ohos.app.ability.common';
 
 @Entry
 @Component
@@ -75,38 +76,20 @@ struct DataEntryPage {
   showDateTimePicker() {
     const selectedDate = new Date(this.checkTime);
     
-    DatePickerDialog.show({
+    this.getUIContext().showDatePickerDialog({
       start: new Date('1900-1-1'),
       end: new Date(),
       selected: selectedDate,
-      lunar: false,
-      onAccept: (value: DatePickerResult) => {
-        // 保存选择的日期，然后打开时间选择器
-        const year = value.year as number;
-        const month = value.month as number;
-        const day = value.day as number;
-        const hour = selectedDate.getHours();
-        const minute = selectedDate.getMinutes();
-        
-        // 创建临时日期对象，保留原有的时间部分
-        const tempDate = new Date(year, month, day, hour, minute);
-        
-        // 打开时间选择器
-        TimePickerDialog.show({
-          selected: selectedDate,
-          useMilitaryTime: true,
-          onAccept: (timeValue: TimePickerResult) => {
-            // 合并日期和时间
-            const finalDate = new Date(
-              year,
-              month,
-              day,
-              timeValue.hour as number,
-              timeValue.minute as number
-            );
-            this.checkTime = finalDate.getTime();
-          }
-        });
+      showTime: true,
+      useMilitaryTime: false,
+      disappearTextStyle: { color: Color.Gray, font: { size: '16fp', weight: FontWeight.Bold } },
+      textStyle: { color: '#182431', font: { size: '18fp', weight: FontWeight.Normal } },
+      selectedTextStyle: { color: this.template?.color || '#4CAF50', font: { size: '20fp', weight: FontWeight.Medium } },
+      onDateAccept: (value: Date) => {
+        this.checkTime = value.getTime();
+      },
+      onCancel: () => {
+        console.info('DatePickerDialog:onCancel()');
       }
     });
   }

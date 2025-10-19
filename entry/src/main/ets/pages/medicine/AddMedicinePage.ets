@@ -1,8 +1,9 @@
-import  router from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { MedicineData,RemindTime } from '../models/MedicineData';
+import router from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { MedicineData, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
-import { NotificationManager } from '../utils/NotificationManager';
+import { NotificationManager } from '../../utils/NotificationManager';
+import common from '@ohos.app.ability.common';
 
 @Entry
 @Component
@@ -79,13 +80,12 @@ struct AddMedicinePage {
     const selectedDate = new Date();
     selectedDate.setHours(currentTime.hour, currentTime.minute);
 
-    TimePickerDialog.show({
+    this.getUIContext().showTimePickerDialog({
       selected: selectedDate,
-      useMilitaryTime: true,
-      onAccept: (value: TimePickerResult) => {
+      onAccept: (value) => {
         const newTime: RemindTime = {
-          hour: value.hour as number,
-          minute: value.minute as number
+          hour: value.hour,
+          minute: value.minute
         };
         this.reminderTimes.set(timeSlot, newTime);
         this.reminderTimes = new Map(this.reminderTimes); // 触发UI更新
@@ -138,16 +138,12 @@ struct AddMedicinePage {
 
   // 显示开始日期选择器
   showStartDatePicker() {
-    DatePickerDialog.show({
+    this.getUIContext().showDatePickerDialog({
       start: new Date(),
       end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
       selected: new Date(this.startDate),
-      lunar: false,
-      onAccept: (value: DatePickerResult) => {
-        const year = value.year as number;
-        const month = value.month as number;
-        const day = value.day as number;
-        this.startDate = new Date(year, month, day).getTime();
+      onDateAccept: (value:Date) => {
+        this.startDate = value.getTime();
         
         // 如果开始日期大于结束日期，自动调整结束日期
         if (this.startDate > this.endDate) {
@@ -159,16 +155,12 @@ struct AddMedicinePage {
 
   // 显示结束日期选择器
   showEndDatePicker() {
-    DatePickerDialog.show({
+    this.getUIContext().showDatePickerDialog({
       start: new Date(this.startDate),
       end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
       selected: new Date(this.endDate),
-      lunar: false,
-      onAccept: (value: DatePickerResult) => {
-        const year = value.year as number;
-        const month = value.month as number;
-        const day = value.day as number;
-        this.endDate = new Date(year, month, day).getTime();
+      onDateAccept: (value) => {
+        this.endDate = value.getTime();
         
         // 如果结束日期小于开始日期，自动调整开始日期
         if (this.endDate < this.startDate) {

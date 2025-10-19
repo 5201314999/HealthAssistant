@@ -8,6 +8,13 @@ import { HealthRecord, HealthRecordJSON } from '../models/DiseaseTemplate';
 import { MedicineData, MedicineRecord, MedicineDataJSON } from '../models/MedicineData';
 
 const PREFERENCES_NAME = 'medical_assistant_data_v2';
+const USER_PREFS_KEY = 'user_preferences';
+
+export interface UserPreferences {
+  joinDate: number;
+  notificationEnabled: boolean;
+  strictReminderEnabled: boolean;
+}
 
 export class HealthDataManager {
   private static instance: HealthDataManager;
@@ -25,8 +32,43 @@ export class HealthDataManager {
   async init(context: Context): Promise<void> {
     try {
       this.dataPreferences = await preferences.getPreferences(context, PREFERENCES_NAME);
+      
+      // 初始化用户首次使用时间
+      const userPrefs = await this.getUserPreferences();
+      if (!userPrefs.joinDate) {
+        userPrefs.joinDate = Date.now();
+        await this.saveUserPreferences(userPrefs);
+      }
     } catch (err) {
       console.error('Failed to init preferences:', JSON.stringify(err));
+    }
+  }
+  
+  async getUserPreferences(): Promise<UserPreferences> {
+    try {
+      const dataStr = await this.dataPreferences?.get(USER_PREFS_KEY, '{}') as string;
+      const prefs = JSON.parse(dataStr) as UserPreferences;
+      return {
+        joinDate: prefs.joinDate || 0,
+        notificationEnabled: prefs.notificationEnabled !== undefined ? prefs.notificationEnabled : true,
+        strictReminderEnabled: prefs.strictReminderEnabled !== undefined ? prefs.strictReminderEnabled : false
+      };
+    } catch (err) {
+      console.error('Failed to get user preferences:', JSON.stringify(err));
+      return {
+        joinDate: 0,
+        notificationEnabled: true,
+        strictReminderEnabled: false
+      };
+    }
+  }
+  
+  async saveUserPreferences(prefs: UserPreferences): Promise<void> {
+    try {
+      await this.dataPreferences?.put(USER_PREFS_KEY, JSON.stringify(prefs));
+      await this.dataPreferences?.flush();
+    } catch (err) {
+      console.error('Failed to save user preferences:', JSON.stringify(err));
     }
   }
   

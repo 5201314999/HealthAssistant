@@ -1,6 +1,6 @@
-import { HomePage } from './HomePage';
-import { MedicineTabPage } from './MedicineTabPage';
-import { ProfilePage } from './ProfilePage';
+import { HomePage } from '../home/HomePage';
+import { MedicineTabPage } from '../medicine/MedicineTabPage';
+import { ProfilePage } from '../profile/ProfilePage';
 
 @Entry
 @Component
@@ -30,7 +30,7 @@ struct MainPage {
       TabContent() {
         HomePage()
       }
-      .tabBar(this.TabBuilder('首页', 0, $r('app.media.heart'), $r('app.media.heart')))
+      .tabBar(this.TabBuilder('首页', 0, $r('app.media.home'), $r('app.media.home')))
 
       TabContent() {
         MedicineTabPage()

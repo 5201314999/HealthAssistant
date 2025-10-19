@@ -3,9 +3,9 @@
  */
 
 import router from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate, HealthRecord } from '../models/DiseaseTemplate';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
 
 @Entry
 @Component
@@ -115,7 +115,7 @@ struct MedicalRecordsPage {
             .margin({ top: 24 })
             .onClick(() => {
               router.pushUrl({
-                url: 'pages/AddMedicalRecordPage'
+                url: 'pages/medical/AddMedicalRecordPage'
               });
             })
         }
@@ -244,7 +244,7 @@ struct MedicalRecordsPage {
     .onClick(() => {
       // 点击查看详情
       router.pushUrl({
-        url: 'pages/MedicalRecordDetailPage',
+        url: 'pages/medical/MedicalRecordDetailPage',
         params: { 
           templateId: record.templateId,
           recordId: record.id

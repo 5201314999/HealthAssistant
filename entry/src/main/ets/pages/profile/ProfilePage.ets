@@ -1,6 +1,6 @@
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import  router  from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import router from '@ohos.router';
 @Entry
 @Component
 export struct ProfilePage {
@@ -9,6 +9,7 @@ export struct ProfilePage {
   @State adherenceRate: number = 0;
   @State notificationEnabled: boolean = true;
   @State strictReminderEnabled: boolean = false;
+  @State joinDate: number = 0;
 
   async aboutToAppear() {
     await this.loadStatistics();
@@ -29,6 +30,12 @@ export struct ProfilePage {
     } else {
       this.adherenceRate = 0;
     }
+    
+    // 获取用户偏好设置
+    const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+    this.joinDate = userPrefs.joinDate;
+    this.notificationEnabled = userPrefs.notificationEnabled;
+    this.strictReminderEnabled = userPrefs.strictReminderEnabled;
   }
 
   build() {
@@ -79,7 +86,7 @@ export struct ProfilePage {
 
             // 用户信息
             Column({ space: 4 }) {
-              Text('张三')
+              Text('小健')
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor('#212121')
@@ -88,7 +95,7 @@ export struct ProfilePage {
                 .fontSize(14)
                 .fontColor('#757575')
 
-              Text('2024年1月加入')
+              Text(this.getJoinDateString())
                 .fontSize(12)
                 .fontColor('#9E9E9E')
             }
@@ -181,8 +188,11 @@ export struct ProfilePage {
             .layoutWeight(1)
 
             Toggle({ type: ToggleType.Switch, isOn: this.notificationEnabled })
-              .onChange((isOn: boolean) => {
+              .onChange(async (isOn: boolean) => {
                 this.notificationEnabled = isOn;
+                const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+                userPrefs.notificationEnabled = isOn;
+                await HealthDataManager.getInstance().saveUserPreferences(userPrefs);
               })
           }
           .width('100%')
@@ -222,8 +232,11 @@ export struct ProfilePage {
             .layoutWeight(1)
 
             Toggle({ type: ToggleType.Switch, isOn: this.strictReminderEnabled })
-              .onChange((isOn: boolean) => {
+              .onChange(async (isOn: boolean) => {
                 this.strictReminderEnabled = isOn;
+                const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+                userPrefs.strictReminderEnabled = isOn;
+                await HealthDataManager.getInstance().saveUserPreferences(userPrefs);
               })
           }
           .width('100%')
@@ -235,7 +248,7 @@ export struct ProfilePage {
         .backgroundColor('#FFFFFF')
         .borderRadius(16)
 
-        // 个人信息
+        // 关于
         Column() {
           Row() {
             Row() {
@@ -274,6 +287,14 @@ export struct ProfilePage {
     .width('100%')
     .height('100%')
     .backgroundColor('#F5F5F5')
+  }
+  
+  getJoinDateString(): string {
+    if (!this.joinDate) {
+      return '未知时间加入';
+    }
+    const date = new Date(this.joinDate);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月加入`;
   }
 }
 

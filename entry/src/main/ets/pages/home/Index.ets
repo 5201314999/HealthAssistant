@@ -1,7 +1,7 @@
-import  router  from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate } from '../models/DiseaseTemplate';
+import router from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 
 @Entry
 @Component
@@ -71,7 +71,7 @@ struct Index {
         Text('📖')
           .fontSize(24)
           .onClick(() => {
-            router.pushUrl({ url: 'pages/GuidePage' });
+            router.pushUrl({ url: 'pages/common/GuidePage' });
           })
       }
       .width('100%')
@@ -126,7 +126,7 @@ struct Index {
               offsetY: 4
             })
             .onClick(() => {
-              router.pushUrl({ url: 'pages/MedicineManagePage' });
+              router.pushUrl({ url: 'pages/medicine/MedicineManagePage' });
             })
           }
 
@@ -146,7 +146,7 @@ struct Index {
                 this.templateCounts.get(template.id) || 0,
                 () => {
                   router.pushUrl({
-                    url: 'pages/DiseaseManagePage',
+                    url: 'pages/disease/DiseaseManagePage',
                     params: { templateId: template.id }
                   });
                 }
@@ -169,7 +169,7 @@ struct Index {
               '#FF9800',
               this.medicineCount,
               () => {
-                router.pushUrl({ url: 'pages/MedicineManagePage' });
+                router.pushUrl({ url: 'pages/medicine/MedicineManagePage' });
               }
             )
           }

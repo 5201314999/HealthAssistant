@@ -182,9 +182,9 @@ export class BuiltInTemplates {
     return BuiltInTemplates.templates;
   }
   
-  static getTemplateById(id: string): DiseaseTemplate | undefined {
+  static getTemplateById(id: string): DiseaseTemplate | null {
     BuiltInTemplates.init();
-    return BuiltInTemplates.templates.find((t: DiseaseTemplate) => t.id === id);
+    return BuiltInTemplates.templates.find((t: DiseaseTemplate) => t.id === id) ||null;
   }
   
   // 添加自定义模板（未来扩展）

@@ -1,9 +1,9 @@
-import  router  from '@ohos.router';
-import { HealthDataManager } from '../utils/HealthDataManager';
-import { BuiltInTemplates } from '../config/BuiltInTemplates';
-import { DiseaseTemplate } from '../models/DiseaseTemplate';
-import { HealthRecord } from '../models/DiseaseTemplate';
-import { MedicineRecord } from '../models/MedicineData';
+import router from '@ohos.router';
+import { HealthDataManager } from '../../utils/HealthDataManager';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { DiseaseTemplate } from '../../models/DiseaseTemplate';
+import { HealthRecord } from '../../models/DiseaseTemplate';
+import { MedicineRecord } from '../../models/MedicineData';
 interface BloodPressure {
   systolic: number;
   diastolic: number;
@@ -240,7 +240,7 @@ export struct HomePage {
           .borderRadius(8)
           .onClick(() => {
             router.pushUrl({
-              url: 'pages/MedicalRecordsPage'
+              url: 'pages/medical/MedicalRecordsPage'
             });
           })
         }
@@ -255,7 +255,7 @@ export struct HomePage {
           // 添加疾病按钮
           Button() {
             Column({ space: 8 }) {
-              Image($r('app.media.heart'))
+              Image($r('app.media.plus'))
                 .width(24)
                 .height(24)
                 .fillColor('#4CAF50')
@@ -272,7 +272,7 @@ export struct HomePage {
           .borderRadius(12)
           .onClick(() => {
             router.pushUrl({
-              url: 'pages/AddDiseasePage'
+              url: 'pages/disease/AddDiseasePage'
             });
           })
           
@@ -296,7 +296,7 @@ export struct HomePage {
           .borderRadius(12)
           .onClick(() => {
             router.pushUrl({
-              url: 'pages/AddMedicalRecordPage'
+              url: 'pages/medical/AddMedicalRecordPage'
             });
           })
         }
@@ -434,7 +434,7 @@ export struct HomePage {
     .borderRadius(12)
     .onClick(() => {
       router.pushUrl({
-        url: 'pages/DiseaseManagePage',
+        url: 'pages/disease/DiseaseManagePage',
         params: { templateId: template.id }
       });
     })
