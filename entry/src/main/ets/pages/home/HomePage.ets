@@ -1,5 +1,6 @@
 import router from '@ohos.router';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { UserPreferenceManager } from '../../utils/DataPreference';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 import { HealthRecord } from '../../models/DiseaseTemplate';
@@ -18,27 +19,39 @@ export struct HomePage {
   @State templates: DiseaseTemplate[] = [];
   @State templateCounts: Map<string, number> = new Map();
   @State todayMedicineRecords: MedicineRecord[] = [];
+  @State activeTemplates: string[] = [];
 
   async aboutToAppear() {
     await this.loadData();
   }
 
+  onPageShow() {
+    // 页面显示时重新加载数据，确保返回首页时显示最新的疾病列表
+    this.loadData();
+  }
+
   async loadData() {
+    const db = HealthRecordDatabase.getInstance();
+    
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
     
-    // 加载各模板的记录数量
+    // 获取已激活的疾病模板
+    const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
+    this.activeTemplates = activeTemplatesFromDB.map((t) => t.templateId);
+    
+    // 加载每个模板的记录数
     for (const template of this.templates) {
-      const count = await HealthDataManager.getInstance().getRecordCount(template.id);
+      const count = await db.getRecordCount(template.id);
       this.templateCounts.set(template.id, count);
     }
+    console.log('this.activeTemplates=======:', this.activeTemplates)
     
     // 计算疾病数量
-    const activeTemplates = await HealthDataManager.getInstance().getActiveDiseaseTemplates();
-    this.diseaseCount = activeTemplates.length;
+    this.diseaseCount = this.activeTemplates.length;
     
     // 加载最新血压数据
-    const latestBP = await HealthDataManager.getInstance().getLatestHealthRecord('hypertension', 'blood_pressure');
+    const latestBP = await db.getLatestHealthRecord('hypertension', 'blood_pressure');
     if (latestBP) {
       const systolic = latestBP.getIndicator('systolic') as number;
       const diastolic = latestBP.getIndicator('diastolic') as number;
@@ -46,13 +59,13 @@ export struct HomePage {
     }
     
     // 加载最新血糖数据
-    const latestDiabetes = await HealthDataManager.getInstance().getLatestHealthRecord('diabetes', 'glucose');
+    const latestDiabetes = await db.getLatestHealthRecord('diabetes', 'glucose');
     if (latestDiabetes) {
       this.latestGlucose = latestDiabetes.getIndicator('glucose') as number;
     }
     
     // 加载今日用药记录
-    this.todayMedicineRecords = await HealthDataManager.getInstance().getMedicineRecords(Date.now());
+    this.todayMedicineRecords = await db.getMedicineRecords(Date.now() - 24 * 60 * 60 * 1000, Date.now());
     
     // 触发UI更新
     this.templateCounts = new Map(this.templateCounts);
@@ -65,10 +78,15 @@ export struct HomePage {
         Row() {
           // Logo
           Row() {
-            Image($r('app.media.heart'))
-              .width(32)
-              .height(32)
-              .fillColor('#FFFFFF')
+            // Image($r('app.media.heart'))
+            //   .width(32)
+            //   .height(32)
+            //   .fillColor('#FFFFFF')
+            // SymbolGlyph({ symbol: $r('app.media.heart') })
+            //   .fontSize(24)
+            //   .fontWeight(600)
+            //   .renderMode(SymbolRenderMode.SINGLE)
+            //   .foregroundColor(Color.Blue)
           }
           .width(60)
           .height(60)
@@ -134,7 +152,7 @@ export struct HomePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor('#ffffff')
   }
 
   @Builder
@@ -145,15 +163,17 @@ export struct HomePage {
         Column({ space: 16 }) {
           Column({ space: 4 }) {
             Text('健康状态概览')
+              .textAlign(TextAlign.Center)
               .fontSize(18)
               .fontWeight(FontWeight.Bold)
               .fontColor('#212121')
               .width('100%')
-
+              .margin({ bottom: 8 })
             Text(`正在管理 ${this.diseaseCount} 种慢性病`)
               .fontSize(14)
               .fontColor('#757575')
               .width('100%')
+              .textAlign(TextAlign.Center)
           }
           .width('100%')
 
@@ -244,9 +264,8 @@ export struct HomePage {
             });
           })
         }
-        .width('100%')
         .padding(20)
-        .backgroundColor('#FFFFFF')
+        .backgroundColor('#eff6ff')
         .borderRadius(16)
         .margin({ left: 16, right: 16, top: 12 })
 
@@ -259,7 +278,7 @@ export struct HomePage {
                 .width(24)
                 .height(24)
                 .fillColor('#4CAF50')
-              
+
               Text('添加疾病')
                 .fontSize(14)
                 .fontColor('#212121')
@@ -268,14 +287,14 @@ export struct HomePage {
           }
           .height(100)
           .layoutWeight(1)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(12)
+          .backgroundColor('#F5F5F5')
+          .borderRadius(6)
           .onClick(() => {
             router.pushUrl({
               url: 'pages/disease/AddDiseasePage'
             });
           })
-          
+
           // 添加就诊记录按钮
           Button() {
             Column({ space: 8 }) {
@@ -283,7 +302,7 @@ export struct HomePage {
                 .width(24)
                 .height(24)
                 .fillColor('#2196F3')
-              
+
               Text('添加就诊记录')
                 .fontSize(14)
                 .fontColor('#212121')
@@ -292,8 +311,8 @@ export struct HomePage {
           }
           .height(100)
           .layoutWeight(1)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(12)
+          .backgroundColor('#F5F5F5')
+          .borderRadius(6)
           .onClick(() => {
             router.pushUrl({
               url: 'pages/medical/AddMedicalRecordPage'
@@ -301,12 +320,18 @@ export struct HomePage {
           })
         }
         .width('100%')
-        .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-        
+        .padding({
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: 8
+        })
+
         // 疾病列表
         Column({ space: 12 }) {
           ForEach(this.templates, (template: DiseaseTemplate) => {
-            if ((this.templateCounts.get(template.id) || 0) > 0) {
+            // 显示已激活的疾病模板，无论是否有记录
+            if (this.activeTemplates.includes(template.id)) {
               this.DiseaseCard(template, this.templateCounts.get(template.id) || 0);
             }
           })
@@ -315,6 +340,7 @@ export struct HomePage {
         .padding({ left: 16, right: 16, bottom: 16 })
       }
       .width('100%')
+      .constraintSize({ minHeight: '100%' })
     }
     .layoutWeight(1)
   }
@@ -418,7 +444,7 @@ export struct HomePage {
       .layoutWeight(1)
 
       // 日期
-      Text(this.getLatestDate(template.id))
+      Text(this.getLatestDateSync(template.id))
         .fontSize(12)
         .fontColor('#BDBDBD')
         .margin({ right: 8 })
@@ -448,7 +474,7 @@ export struct HomePage {
         .onChange(async (value: boolean) => {
           record.taken = value;
           record.takenTime = value ? Date.now() : 0;
-          await HealthDataManager.getInstance().saveMedicineRecord(record);
+          await HealthRecordDatabase.getInstance().saveMedicineRecord(record);
           await this.loadData();
         })
         .margin({ right: 12 })
@@ -499,10 +525,22 @@ export struct HomePage {
     return this.todayMedicineRecords.filter(r => r.taken).length;
   }
 
-  getLatestDate(templateId: string): string {
-    // 这里应该获取最新记录的日期，暂时返回固定值
-    const today = new Date();
-    return `${today.getMonth() + 1}/${today.getDate()}`;
+  getLatestDateSync(templateId: string): string {
+    // 同步方法，返回默认值
+    return '--';
+  }
+
+  async getLatestDate(templateId: string): Promise<string> {
+    try {
+      const latestRecord = await HealthRecordDatabase.getInstance().getLatestHealthRecord(templateId);
+      if (latestRecord) {
+        const date = new Date(latestRecord.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }
+      return '--';
+    } catch (err) {
+      return '--';
+    }
   }
 }
 

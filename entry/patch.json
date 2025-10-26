@@ -1,0 +1,11 @@
+{
+  "app": {
+    "bundleName": "cn.myapp.medicalassistant",
+    "patchVersionCode": 2000021,
+    "versionCode": 1000000
+  },
+  "module": {
+    "name": "entry",
+    "type": "hotreload"
+  }
+}

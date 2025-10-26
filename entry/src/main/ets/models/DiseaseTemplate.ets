@@ -17,6 +17,15 @@ export interface WarningLevel {
   label: string;
 }
 
+// 激活的疾病模板接口（从数据库返回）
+export interface IDiseaseTemplate {
+  templateId: string;
+  templateName: string;
+  activatedAt: number;
+  isDeleted?: boolean;
+  deletedAt?: number | null;
+}
+
 // 健康记录JSON接口
 export interface HealthRecordJSON {
   id: string;
@@ -112,10 +121,8 @@ export class HealthRecord {
   templateId: string = ''; // 所属模板ID
   groupId: string = ''; // 所属指标组ID
   date: number = 0; // 记录时间
-  indicators: Map<string, number | string> = new Map(); // 指标数据 Map
+  indicators: Record<string, number | string> = {}; // 指标数据（键值对对象）
   note: string = ''; // 备注
-  
-  // 新增字段
   hospital: string = ''; // 医院名称
   doctor: string = ''; // 医生姓名
   checkTime: number = 0; // 检查时间（可以与记录时间不同）
@@ -130,19 +137,19 @@ export class HealthRecord {
   
   // 设置指标值
   setIndicator(key: string, value: number | string): void {
-    this.indicators.set(key, value);
+    this.indicators[key] = value;
   }
   
   // 获取指标值
   getIndicator(key: string): number | string | undefined {
-    return this.indicators.get(key);
+    return this.indicators[key];
   }
   
   // 转换为可序列化的对象（用于存储）
   toJSON(): HealthRecordJSON {
     const indicatorsObj: Record<string, number | string> = {};
-    this.indicators.forEach((value: number | string, key: string) => {
-      indicatorsObj[key] = value;
+    Object.keys(this.indicators).forEach((key: string) => {
+      indicatorsObj[key] = this.indicators[key];
     });
     
     const json: HealthRecordJSON = {

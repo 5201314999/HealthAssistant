@@ -3,10 +3,10 @@
  */
 
 import router from '@ohos.router';
-import { promptAction, AlertDialog } from '@kit.ArkUI';
-import { HealthDataManager } from '../../utils/HealthDataManager';
-import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+import { promptAction } from '@kit.ArkUI';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
+import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 
 @Entry
 @Component
@@ -40,7 +40,7 @@ struct MedicalRecordDetailPage {
     this.isLoading = true;
     
     // 获取所有记录
-    const records = await HealthDataManager.getInstance().getHealthRecords(this.templateId, 'medical_record');
+    const records = await HealthRecordDatabase.getInstance().getHealthRecords(this.templateId, 'medical_record');
     
     // 查找指定ID的记录
     this.record = records.find(r => r.id === this.recordId) || null;
@@ -68,7 +68,7 @@ struct MedicalRecordDetailPage {
         value: '删除',
         action: async () => {
           if (this.record) {
-            await HealthDataManager.getInstance().deleteHealthRecord(this.templateId, this.record.id);
+            await HealthRecordDatabase.getInstance().deleteHealthRecord(this.record.id);
             promptAction.showToast({ message: '删除成功' });
             router.back();
           }

@@ -1,5 +1,5 @@
 import router from '@ohos.router';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { MedicineData, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../../utils/NotificationManager';
@@ -12,26 +12,26 @@ struct AddMedicinePage {
   @State specification: string = '';
   @State dosage: string = '';
   @State frequency: string[] = [];
-  @State reminderTimes: Map<string, RemindTime> = this.getDefaultReminderTimes();
+  @State reminderTimes: Record<string, RemindTime> = this.getDefaultReminderTimes();
   @State stock: string = '';
   @State startDate: number = Date.now();
   @State endDate: number = Date.now() + 30 * 24 * 60 * 60 * 1000;
   @State note: string = '';
 
   // 获取默认提醒时间
-  getDefaultReminderTimes(): Map<string, RemindTime> {
-    const map = new Map<string, RemindTime>();
+  getDefaultReminderTimes(): Record<string, RemindTime> {
+    const obj: Record<string, RemindTime> = {};
     const morningTime: RemindTime = { hour: 8, minute: 0 };
     const noonTime: RemindTime = { hour: 12, minute: 0 };
     const eveningTime: RemindTime = { hour: 18, minute: 0 };
     const bedtimeTime: RemindTime = { hour: 22, minute: 0 };
     
-    map.set('morning', morningTime);
-    map.set('noon', noonTime);
-    map.set('evening', eveningTime);
-    map.set('bedtime', bedtimeTime);
+    obj['morning'] = morningTime;
+    obj['noon'] = noonTime;
+    obj['evening'] = eveningTime;
+    obj['bedtime'] = bedtimeTime;
     
-    return map;
+    return obj;
   }
 
   async saveData() {
@@ -50,16 +50,16 @@ struct AddMedicinePage {
     medicine.specification = this.specification;
     medicine.dosage = this.dosage;
     medicine.frequency = this.frequency;
-    medicine.reminderTimes = new Map(this.reminderTimes);
+    medicine.reminderTimes = this.reminderTimes;
     medicine.stock = this.stock ? parseInt(this.stock) : 0;
     medicine.startDate = this.startDate;
     medicine.endDate = this.endDate;
     medicine.note = this.note;
 
-    await HealthDataManager.getInstance().saveMedicine(medicine);
+    await HealthRecordDatabase.getInstance().saveMedicine(medicine);
     
     // 生成今日用药记录
-    await HealthDataManager.getInstance().generateTodayMedicineRecords();
+    await HealthRecordDatabase.getInstance().generateTodayMedicineRecords();
     
     // 创建用药提醒通知
     await this.createMedicineReminders(medicine);
@@ -70,13 +70,13 @@ struct AddMedicinePage {
 
   // 获取服用时间对应的小时和分钟
   getReminderTime(timeSlot: string): RemindTime {
-    const time = this.reminderTimes.get(timeSlot);
+    const time = this.reminderTimes[timeSlot];
     return time || { hour: 8, minute: 0 };
   }
 
   // 显示时间选择器
   showTimePickerForSlot(timeSlot: string) {
-    const currentTime = this.reminderTimes.get(timeSlot) || { hour: 8, minute: 0 };
+    const currentTime = this.reminderTimes[timeSlot] || { hour: 8, minute: 0 };
     const selectedDate = new Date();
     selectedDate.setHours(currentTime.hour, currentTime.minute);
 
@@ -87,8 +87,9 @@ struct AddMedicinePage {
           hour: value.hour,
           minute: value.minute
         };
-        this.reminderTimes.set(timeSlot, newTime);
-        this.reminderTimes = new Map(this.reminderTimes); // 触发UI更新
+        this.reminderTimes[timeSlot] = newTime;
+        // ArkTS 不支持展开运算符，使用 JSON 方式进行深拷贝以触发UI更新
+        this.reminderTimes = JSON.parse(JSON.stringify(this.reminderTimes));
         promptAction.showToast({ 
           message: `已设置为 ${String(newTime.hour).padStart(2, '0')}:${String(newTime.minute).padStart(2, '0')}` 
         });
@@ -98,7 +99,7 @@ struct AddMedicinePage {
 
   // 格式化时间显示
   formatTime(timeSlot: string): string {
-    const time = this.reminderTimes.get(timeSlot);
+    const time = this.reminderTimes[timeSlot];
     if (!time) return '';
     return `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
   }
@@ -409,7 +410,6 @@ struct AddMedicinePage {
           .height(48)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .backgroundColor('#FF9800')
           .borderRadius(24)
           .onClick(() => {
             this.saveData();

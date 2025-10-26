@@ -1,7 +1,8 @@
 import router from '@ohos.router';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate } from '../../models/DiseaseTemplate';
+import { MedicineRecord } from '../../models/MedicineData';
 
 @Entry
 @Component
@@ -14,7 +15,7 @@ struct Index {
 
   async aboutToAppear() {
     // 初始化数据管理器
-    await HealthDataManager.getInstance().init(getContext(this));
+    await HealthRecordDatabase.getInstance().init(getContext(this));
     
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
@@ -23,7 +24,7 @@ struct Index {
     await this.loadStatistics();
     
     // 生成今日用药记录
-    await HealthDataManager.getInstance().generateTodayMedicineRecords();
+    await HealthRecordDatabase.getInstance().generateTodayMedicineRecords();
   }
 
   onPageShow() {
@@ -33,13 +34,13 @@ struct Index {
   async loadStatistics() {
     // 加载各模板的记录数量
     for (const template of this.templates) {
-      const count = await HealthDataManager.getInstance().getRecordCount(template.id);
+      const count = await HealthRecordDatabase.getInstance().getRecordCount(template.id);
       this.templateCounts.set(template.id, count);
     }
     
     // 加载用药数据
-    const medicineList = await HealthDataManager.getInstance().getMedicineList();
-    const todayRecords = await HealthDataManager.getInstance().getMedicineRecords(Date.now());
+    const medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
+    const todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
     
     this.medicineCount = medicineList.length;
     this.todayMedicineCount = todayRecords.filter(r => !r.taken).length;

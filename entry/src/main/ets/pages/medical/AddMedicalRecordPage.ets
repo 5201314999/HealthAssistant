@@ -4,9 +4,9 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
+import { DiseaseTemplate, IndicatorGroup, HealthRecord, IndicatorDefinition, IndicatorType } from '../../models/DiseaseTemplate';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
-import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
 
 
 
@@ -33,15 +33,15 @@ struct AddMedicalRecordPage {
   }
 
   async loadActiveTemplates() {
-    const activeTemplateIds = await HealthDataManager.getInstance().getActiveDiseaseTemplates();
-    this.templates = BuiltInTemplates.getAllTemplates().filter(template => 
-      activeTemplateIds.includes(template.id)
-    );
+    const db = HealthRecordDatabase.getInstance();
+    const allTemplates = BuiltInTemplates.getAllTemplates();
+    this.templates = [];
     
-    // 默认选中第一个模板
-    if (this.templates.length > 0) {
-      this.selectedTemplateId = this.templates[0].id;
-      this.selectedIndex=0
+    for (const template of allTemplates) {
+      const count = await db.getRecordCount(template.id);
+      if (count > 0) {
+        this.templates.push(template);
+      }
     }
   }
 
@@ -88,7 +88,7 @@ struct AddMedicalRecordPage {
     record.setIndicator('treatment', this.treatment);
     record.note = this.notes;
 
-    await HealthDataManager.getInstance().saveHealthRecord(record);
+    await HealthRecordDatabase.getInstance().saveHealthRecord(record);
     promptAction.showToast({ message: '保存成功' });
     router.back();
   }
@@ -219,9 +219,11 @@ struct AddMedicalRecordPage {
 
             // 主治医生
             Column({ space: 8 }) {
-              Text('主治医生')
-                .fontSize(16)
-                .fontColor('#212121')
+              Row() {
+                Text('主治医生')
+                  .fontSize(16)
+                  .fontColor('#212121')
+              }.width('100%')
               
               TextInput({
                 placeholder: '请输入医生姓名',
@@ -291,9 +293,11 @@ struct AddMedicalRecordPage {
 
             // 备注
             Column({ space: 8 }) {
-              Text('备注')
-                .fontSize(16)
-                .fontColor('#212121')
+              Row() {
+                Text('备注')
+                  .fontSize(16)
+                  .fontColor('#212121')
+              }.width('100%')
               
               TextArea({
                 placeholder: '其他需要记录的信息',

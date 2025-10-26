@@ -4,7 +4,7 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 
@@ -13,24 +13,70 @@ import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 struct AddDiseasePage {
   @State templates: DiseaseTemplate[] = [];
   @State selectedTemplateId: string = '';
+  @State activeTemplates: string[] = [];
+  @State isAdding: boolean = false; // 添加防抖标志
 
-  aboutToAppear() {
+  async aboutToAppear() {
     // 获取所有可用的疾病模板
     this.templates = BuiltInTemplates.getAllTemplates();
+    // 获取已激活的疾病模板
+    const db = HealthRecordDatabase.getInstance();
+    const activeTemplates = await db.getActiveDiseaseTemplates();
+    this.activeTemplates = activeTemplates.map((t) => t.templateId);
   }
 
   async addDisease() {
+    // 防抖：防止快速重复点击
+    if (this.isAdding) {
+      promptAction.showToast({ message: '操作处理中，请稍候...' });
+      return;
+    }
+
     if (!this.selectedTemplateId) {
       promptAction.showToast({ message: '请选择一种疾病' });
       return;
     }
 
-    // 添加疾病模板到活跃列表
-    await HealthDataManager.getInstance().activateDiseaseTemplate(this.selectedTemplateId);
-    
-    // 返回上一页
-    promptAction.showToast({ message: '添加成功' });
-    router.back();
+    // 检查是否已经添加过该疾病
+    if (this.activeTemplates.includes(this.selectedTemplateId)) {
+      promptAction.showToast({ message: '该疾病已经添加过了，无需重复添加' });
+      return;
+    }
+
+    this.isAdding = true;
+    try {
+      // 获取选中的模板名称
+      const template = this.templates.find((t) => t.id === this.selectedTemplateId);
+      if (!template) {
+        promptAction.showToast({ message: '未找到选择的疾病' });
+        this.isAdding = false;
+        return;
+      }
+
+      // 激活疾病模板
+      const db = HealthRecordDatabase.getInstance();
+      await db.activateDiseaseTemplate(this.selectedTemplateId, template.name);
+      
+      // 立即更新本地状态，防止重复添加
+      if (!this.activeTemplates.includes(this.selectedTemplateId)) {
+        this.activeTemplates.push(this.selectedTemplateId);
+        // 触发UI更新
+        this.activeTemplates = JSON.parse(JSON.stringify(this.activeTemplates));
+      }
+      
+      promptAction.showToast({ message: '添加成功' });
+      
+      // 延迟返回，让用户看到成功提示
+      setTimeout(() => {
+        router.back();
+      }, 500);
+      
+    } catch (err) {
+      console.error('Failed to add disease:', JSON.stringify(err));
+      promptAction.showToast({ message: '添加失败，请重试' });
+    } finally {
+      this.isAdding = false;
+    }
   }
 
   build() {
@@ -71,7 +117,7 @@ struct AddDiseasePage {
           // 疾病列表
           Column({ space: 12 }) {
             ForEach(this.templates, (template: DiseaseTemplate) => {
-              this.DiseaseTemplateCard(template);
+                this.DiseaseTemplateCard(template,this.activeTemplates.includes(template.id));
             })
           }
           .width('100%')
@@ -108,7 +154,7 @@ struct AddDiseasePage {
   }
 
   @Builder
-  DiseaseTemplateCard(template: DiseaseTemplate) {
+  DiseaseTemplateCard(template: DiseaseTemplate,isAlreadyAdded:boolean) {
     Row() {
       // 图标
       Row() {
@@ -131,28 +177,43 @@ struct AddDiseasePage {
           .fontWeight(FontWeight.Medium)
           .fontColor('#212121')
 
-        Text(template.description || '点击选择此疾病')
-          .fontSize(13)
-          .fontColor('#9E9E9E')
+        if (isAlreadyAdded) {
+          Text('已添加')
+            .fontSize(13)
+            .fontColor('#4CAF50')
+        } else {
+          Text(template.description || '点击选择此疾病')
+            .fontSize(13)
+            .fontColor('#9E9E9E')
+        }
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
 
       // 选择状态
-      Radio({ value: template.id, group: 'diseaseTemplates' })
-        .checked(this.selectedTemplateId === template.id)
-        .onChange((isChecked: boolean) => {
-          if (isChecked) {
-            this.selectedTemplateId = template.id;
-          }
-        })
+      if (!isAlreadyAdded) {
+        Radio({ value: template.id, group: 'diseaseTemplates' })
+          .checked(this.selectedTemplateId === template.id)
+          .onChange((isChecked: boolean) => {
+            if (isChecked) {
+              this.selectedTemplateId = template.id;
+            }
+          })
+      } else {
+        Image($r('sys.media.ohos_ic_public_ok'))
+          .width(24)
+          .height(24)
+          .fillColor('#4CAF50')
+      }
     }
     .width('100%')
     .padding(16)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(isAlreadyAdded ? '#F5F5F5' : '#FFFFFF')
     .borderRadius(12)
     .onClick(() => {
-      this.selectedTemplateId = template.id;
+      if (!isAlreadyAdded) {
+        this.selectedTemplateId = template.id;
+      }
     })
   }
 }

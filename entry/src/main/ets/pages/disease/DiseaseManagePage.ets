@@ -5,7 +5,7 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import {
   DiseaseTemplate,
   IndicatorGroup,
@@ -45,10 +45,11 @@ struct DiseaseManagePage {
 
     const currentGroup = this.template.indicatorGroups[this.currentGroupIndex];
     if (currentGroup) {
-      this.records = await HealthDataManager.getInstance().getHealthRecords(
+      this.records = await HealthRecordDatabase.getInstance().getHealthRecords(
         this.template.id,
         currentGroup.id
       );
+      console.log('records', this.records);
     }
   }
 
@@ -170,7 +171,7 @@ struct DiseaseManagePage {
           .fontWeight(FontWeight.Bold)
           .onClick(async () => {
             if (this.template) {
-              await HealthDataManager.getInstance().deleteHealthRecord(this.template.id, record.id);
+              await HealthRecordDatabase.getInstance().deleteHealthRecord(record.id);
               await this.loadData();
               promptAction.showToast({ message: '删除成功' });
             }

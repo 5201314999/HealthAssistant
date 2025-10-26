@@ -1,5 +1,5 @@
 import router from '@ohos.router';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { MedicineData, MedicineRecord } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../../utils/NotificationManager';
@@ -16,14 +16,14 @@ export struct MedicineTabPage {
   }
 
   async loadData() {
-    this.medicineList = await HealthDataManager.getInstance().getMedicineList();
-    this.todayRecords = await HealthDataManager.getInstance().getMedicineRecords(Date.now());
+    this.medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
+    this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
   }
 
   async toggleRecordStatus(record: MedicineRecord) {
     record.taken = !record.taken;
     record.takenTime = record.taken ? Date.now() : 0;
-    await HealthDataManager.getInstance().saveMedicineRecord(record);
+    await HealthRecordDatabase.getInstance().saveMedicineRecord(record);
     await this.loadData();
     promptAction.showToast({ message: record.taken ? '已打卡' : '已取消打卡' });
   }
@@ -411,7 +411,7 @@ export struct MedicineTabPage {
           .fontColor('#F44336')
           .fontWeight(FontWeight.Bold)
           .onClick(async () => {
-            await HealthDataManager.getInstance().deleteMedicine(medicine.id);
+            await HealthRecordDatabase.getInstance().deleteMedicine(medicine.id);
             await this.cancelMedicineReminders(medicine);
             await this.loadData();
             promptAction.showToast({ message: '删除成功' });
@@ -440,7 +440,7 @@ export struct MedicineTabPage {
 
         Text(medicine.frequency.map((f: string) => {
           const timeName = this.getTimeName(f);
-          const reminderTime = medicine.reminderTimes.get(f);
+          const reminderTime = medicine.reminderTimes[f];
           if (reminderTime) {
             const hour = String(reminderTime.hour).padStart(2, '0');
             const minute = String(reminderTime.minute).padStart(2, '0');

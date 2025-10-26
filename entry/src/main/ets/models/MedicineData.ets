@@ -5,7 +5,7 @@ export class MedicineData {
   specification: string = ''; // 规格
   dosage: string = ''; // 用法用量
   frequency: string[] = []; // 服用时间 ['morning', 'noon', 'evening', 'bedtime']
-  reminderTimes: Map<string, RemindTime> = new Map(); // 每个时段的具体提醒时间
+  reminderTimes: Record<string, RemindTime> = {}; // 每个时段的具体提醒时间
   startDate: number = 0;
   endDate: number = 0;
   stock: number = 0; // 库存数量
@@ -17,17 +17,17 @@ export class MedicineData {
     this.startDate = Date.now();
     this.endDate = Date.now() + 30 * 24 * 60 * 60 * 1000; // 默认30天
     // 初始化默认提醒时间
-    this.reminderTimes.set('morning', { hour: 8, minute: 0 });
-    this.reminderTimes.set('noon', { hour: 12, minute: 0 });
-    this.reminderTimes.set('evening', { hour: 18, minute: 0 });
-    this.reminderTimes.set('bedtime', { hour: 22, minute: 0 });
+    this.reminderTimes['morning'] = { hour: 8, minute: 0 };
+    this.reminderTimes['noon'] = { hour: 12, minute: 0 };
+    this.reminderTimes['evening'] = { hour: 18, minute: 0 };
+    this.reminderTimes['bedtime'] = { hour: 22, minute: 0 };
   }
 
   // 序列化为 JSON
   toJSON(): MedicineDataJSON {
     const reminderTimesObj: Record<string, RemindTime> = {};
-    this.reminderTimes.forEach((value: RemindTime, key: string) => {
-      reminderTimesObj[key] = value;
+    Object.keys(this.reminderTimes).forEach((key: string) => {
+      reminderTimesObj[key] = this.reminderTimes[key];
     });
 
     const result: MedicineDataJSON = {
@@ -63,9 +63,9 @@ export class MedicineData {
     // 处理 reminderTimes
     const reminderTimesObj = json.reminderTimesObj;
     if (reminderTimesObj) {
-      medicine.reminderTimes = new Map();
+      medicine.reminderTimes = {};
       Object.keys(reminderTimesObj).forEach((key: string) => {
-        medicine.reminderTimes.set(key, reminderTimesObj[key]);
+        medicine.reminderTimes[key] = reminderTimesObj[key];
       });
     }
 

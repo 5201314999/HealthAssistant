@@ -1,4 +1,5 @@
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { UserPreferenceManager } from '../../utils/DataPreference';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import router from '@ohos.router';
 @Entry
@@ -16,14 +17,24 @@ export struct ProfilePage {
   }
 
   async loadStatistics() {
-    const activeTemplates = await HealthDataManager.getInstance().getActiveDiseaseTemplates();
-    this.diseaseCount = activeTemplates.length;
+    const db = HealthRecordDatabase.getInstance();
     
-    const medicineList = await HealthDataManager.getInstance().getMedicineList();
+    // 获取有数据的疾病数量
+    let diseaseCount = 0;
+    const templates = BuiltInTemplates.getAllTemplates();
+    for (const template of templates) {
+      const count = await db.getRecordCount(template.id);
+      if (count > 0) {
+        diseaseCount++;
+      }
+    }
+    this.diseaseCount = diseaseCount;
+    
+    const medicineList = await db.getMedicineList();
     this.medicineCount = medicineList.length;
     
     // 计算服药率
-    const allRecords = await HealthDataManager.getInstance().getMedicineRecords();
+    const allRecords = await db.getMedicineRecords();
     if (allRecords.length > 0) {
       const takenCount = allRecords.filter(r => r.taken).length;
       this.adherenceRate = Math.round((takenCount / allRecords.length) * 100);
@@ -32,7 +43,7 @@ export struct ProfilePage {
     }
     
     // 获取用户偏好设置
-    const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+    const userPrefs = await UserPreferenceManager.getInstance().getUserPreferences();
     this.joinDate = userPrefs.joinDate;
     this.notificationEnabled = userPrefs.notificationEnabled;
     this.strictReminderEnabled = userPrefs.strictReminderEnabled;
@@ -190,9 +201,9 @@ export struct ProfilePage {
             Toggle({ type: ToggleType.Switch, isOn: this.notificationEnabled })
               .onChange(async (isOn: boolean) => {
                 this.notificationEnabled = isOn;
-                const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+                const userPrefs = await UserPreferenceManager.getInstance().getUserPreferences();
                 userPrefs.notificationEnabled = isOn;
-                await HealthDataManager.getInstance().saveUserPreferences(userPrefs);
+                await UserPreferenceManager.getInstance().saveUserPreferences(userPrefs);
               })
           }
           .width('100%')
@@ -234,9 +245,9 @@ export struct ProfilePage {
             Toggle({ type: ToggleType.Switch, isOn: this.strictReminderEnabled })
               .onChange(async (isOn: boolean) => {
                 this.strictReminderEnabled = isOn;
-                const userPrefs = await HealthDataManager.getInstance().getUserPreferences();
+                const userPrefs = await UserPreferenceManager.getInstance().getUserPreferences();
                 userPrefs.strictReminderEnabled = isOn;
-                await HealthDataManager.getInstance().saveUserPreferences(userPrefs);
+                await UserPreferenceManager.getInstance().saveUserPreferences(userPrefs);
               })
           }
           .width('100%')
@@ -252,7 +263,7 @@ export struct ProfilePage {
         Column() {
           Row() {
             Row() {
-              Image($r('app.media.user'))
+              Image($r('app.media.settings'))
                 .width(24)
                 .height(24)
                 .fillColor('#757575')
@@ -264,7 +275,7 @@ export struct ProfilePage {
             .justifyContent(FlexAlign.Center)
             .margin({ right: 12 })
 
-            Text('个人信息')
+            Text('关于')
               .fontSize(15)
               .fontColor('#212121')
               .layoutWeight(1)
@@ -283,6 +294,7 @@ export struct ProfilePage {
         .margin({ left: 16, right: 16, top: 20, bottom: 20 })
       }
       .width('100%')
+      .constraintSize({ minHeight: '100%' })
     }
     .width('100%')
     .height('100%')

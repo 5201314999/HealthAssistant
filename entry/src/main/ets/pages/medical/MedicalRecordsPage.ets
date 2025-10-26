@@ -3,7 +3,7 @@
  */
 
 import router from '@ohos.router';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate, HealthRecord } from '../../models/DiseaseTemplate';
 
@@ -21,20 +21,51 @@ struct MedicalRecordsPage {
       this.templateMap.set(template.id, template);
     });
     
-    // 加载所有就诊记录
-    await this.loadAllMedicalRecords();
+    // 获取活跃的疾病模板（有数据的模板）
+    const db = HealthRecordDatabase.getInstance();
+    const allTemplates = BuiltInTemplates.getAllTemplates();
+    const activeTemplateIds: string[] = [];
+    
+    for (const template of allTemplates) {
+      const count = await db.getRecordCount(template.id);
+      if (count > 0) {
+        activeTemplateIds.push(template.id);
+      }
+    }
+    
+    // 获取所有模板的就诊记录
+    let allRecords: HealthRecord[] = [];
+    for (const templateId of activeTemplateIds) {
+      const records = await db.getHealthRecords(templateId, 'medical_record');
+      allRecords = allRecords.concat(records);
+    }
+    
+    // 按日期降序排序
+    allRecords.sort((a, b) => b.date - a.date);
+    
+    this.records = allRecords;
+    this.isLoading = false;
   }
 
   async loadAllMedicalRecords() {
     this.isLoading = true;
     
-    // 获取活跃的疾病模板
-    const activeTemplateIds = await HealthDataManager.getInstance().getActiveDiseaseTemplates();
+    // 获取活跃的疾病模板（有数据的模板）
+    const db = HealthRecordDatabase.getInstance();
+    const allTemplates = BuiltInTemplates.getAllTemplates();
+    const activeTemplateIds: string[] = [];
+    
+    for (const template of allTemplates) {
+      const count = await db.getRecordCount(template.id);
+      if (count > 0) {
+        activeTemplateIds.push(template.id);
+      }
+    }
     
     // 获取所有模板的就诊记录
     let allRecords: HealthRecord[] = [];
     for (const templateId of activeTemplateIds) {
-      const records = await HealthDataManager.getInstance().getHealthRecords(templateId, 'medical_record');
+      const records = await db.getHealthRecords(templateId, 'medical_record');
       allRecords = allRecords.concat(records);
     }
     

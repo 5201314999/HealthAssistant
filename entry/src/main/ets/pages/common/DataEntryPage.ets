@@ -5,7 +5,7 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { HealthDataManager } from '../../utils/HealthDataManager';
+import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { DiseaseTemplate, IndicatorGroup, HealthRecord, IndicatorDefinition, IndicatorType, IndicatorOption } from '../../models/DiseaseTemplate';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import common from '@ohos.app.ability.common';
@@ -15,7 +15,7 @@ import common from '@ohos.app.ability.common';
 struct DataEntryPage {
   @State template: DiseaseTemplate | null = null;
   @State group: IndicatorGroup | null = null;
-  @State formData: Map<string, number | string> = new Map();
+  @State formData: Record<string, number | string> = {}; // 表单数据（键值对对象）
   @State note: string = '';
   @State hospital: string = ''; // 医院名称
   @State doctor: string = ''; // 医生姓名
@@ -34,9 +34,9 @@ struct DataEntryPage {
       if (this.group) {
         this.group.indicators.forEach((indicator: IndicatorDefinition) => {
           if (indicator.type === IndicatorType.SELECT && indicator.options && indicator.options.length > 0) {
-            this.formData.set(indicator.id, indicator.options[0].value);
+            this.formData[indicator.id] = indicator.options[0].value;
           } else {
-            this.formData.set(indicator.id, '');
+            this.formData[indicator.id] = '';
           }
         });
       }
@@ -50,7 +50,7 @@ struct DataEntryPage {
 
     // 验证必填项
     for (const indicator of this.group.indicators) {
-      if (indicator.required && !this.formData.get(indicator.id)) {
+      if (indicator.required && !this.formData[indicator.id]) {
         promptAction.showToast({ message: `请填写${indicator.name}` });
         return;
       }
@@ -59,15 +59,15 @@ struct DataEntryPage {
     // 创建健康记录
     const record = new HealthRecord(this.template.id, this.group.id);
     // 复制 formData 到 record.indicators
-    this.formData.forEach((value: number | string, key: string) => {
-      record.setIndicator(key, value);
+    Object.keys(this.formData).forEach((key: string) => {
+      record.setIndicator(key, this.formData[key]);
     });
     record.note = this.note;
     record.hospital = this.hospital;
     record.doctor = this.doctor;
     record.checkTime = this.checkTime;
 
-    await HealthDataManager.getInstance().saveHealthRecord(record);
+    await HealthRecordDatabase.getInstance().saveHealthRecord(record);
     promptAction.showToast({ message: '保存成功' });
     router.back();
   }
@@ -326,14 +326,13 @@ struct DataEntryPage {
         Row() {
           TextInput({
             placeholder: '请输入数值',
-            text: (this.formData.get(indicator.id) as number)?.toString() || ''
+            text: (this.formData[indicator.id] as number)?.toString() || ''
           })
             .type(InputType.Number)
             .layoutWeight(1)
             .onChange((value: string) => {
               const numValue = value ? parseFloat(value) : 0;
-              this.formData.set(indicator.id, numValue);
-              this.formData = new Map(this.formData);
+              this.formData[indicator.id] = numValue;
             })
 
           if (indicator.unit) {
@@ -349,10 +348,9 @@ struct DataEntryPage {
           ForEach(indicator.options, (option: IndicatorOption) => {
             this.SelectButton(
               option.label,
-              this.formData.get(indicator.id) === option.value,
+              this.formData[indicator.id] === option.value,
               () => {
-                this.formData.set(indicator.id, option.value);
-                this.formData = new Map(this.formData);
+                this.formData[indicator.id] = option.value;
               }
             )
           })
@@ -361,11 +359,10 @@ struct DataEntryPage {
       } else if (indicator.type === IndicatorType.TEXT) {
         TextInput({
           placeholder: `请输入${indicator.name}`,
-          text: (this.formData.get(indicator.id) as string) || ''
+          text: (this.formData[indicator.id] as string) || ''
         })
           .onChange((value: string) => {
-            this.formData.set(indicator.id, value);
-            this.formData = new Map(this.formData);
+            this.formData[indicator.id] = value;
           })
       }
 
