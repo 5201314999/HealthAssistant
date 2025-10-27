@@ -1,7 +1,7 @@
 {
   "app": {
     "bundleName": "cn.myapp.medicalassistant",
-    "patchVersionCode": 2000021,
+    "patchVersionCode": 2000037,
     "versionCode": 1000000
   },
   "module": {

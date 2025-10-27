@@ -3,6 +3,7 @@
     "pages/common/MainPage",
     "pages/home/HomePage",
     "pages/profile/ProfilePage",
+    "pages/common/AboutPage",
     "pages/home/Index",
     "pages/common/GuidePage",
     "pages/disease/DiseaseManagePage",

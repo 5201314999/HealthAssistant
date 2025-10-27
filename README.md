@@ -277,3 +277,11 @@ entry/src/main/ets/
 ## ⚠️ 免责声明
 
 本应用提供的参考值和健康评估仅供参考，不能替代医生的专业诊断。如有健康问题，请及时就医。
+
+1. 新增类型，不要用字面量类型， 都需要 interface 声名类型再使用
+2. any ，unknow 不允许
+3. const e =ErrorUtils.toError(err)
+   hilog.error(DOMAIN, TAG, 'Init failed:%{public}s', JSON.stringify(e));
+   throw e; throw error 参考这种写法
+4. 不需要编写文档文件，说明文档
+5. Only UI component syntax can be written here

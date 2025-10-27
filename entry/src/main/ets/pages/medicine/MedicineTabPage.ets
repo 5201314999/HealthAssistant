@@ -3,7 +3,10 @@ import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { MedicineData, MedicineRecord } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../../utils/NotificationManager';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
+const TAG = 'MedicineTabPage';
+const DOMAIN = 0x0000;
 
 @Component
 export struct MedicineTabPage {
@@ -12,12 +15,24 @@ export struct MedicineTabPage {
   @State todayRecords: MedicineRecord[] = [];
 
   async aboutToAppear() {
+    hilog.debug(DOMAIN, TAG, 'aboutToAppear');
     await this.loadData();
   }
 
+  onPageShow() {
+    hilog.debug(DOMAIN, TAG, 'onPageShow - reloading data');
+    this.loadData();
+  }
+
   async loadData() {
-    this.medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
-    this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
+    try {
+      this.medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
+      this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
+      hilog.info(DOMAIN, TAG, 'Data loaded: %{public}d medicines, %{public}d today records', 
+        this.medicineList.length, this.todayRecords.length);
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Failed to load data: %{public}s', JSON.stringify(err));
+    }
   }
 
   async toggleRecordStatus(record: MedicineRecord) {

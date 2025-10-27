@@ -5,6 +5,7 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import {
   DiseaseTemplate,
@@ -14,6 +15,9 @@ import {
   IndicatorOption
 } from '../../models/DiseaseTemplate';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
+
+const TAG = 'DiseaseManagePage';
+const DOMAIN = 0x0000;
 
 @Entry
 @Component
@@ -25,6 +29,7 @@ struct DiseaseManagePage {
   async aboutToAppear() {
     const params = router.getParams() as Record<string, Object>;
     const templateId = params['templateId'] as string;
+    hilog.debug(DOMAIN, TAG, 'aboutToAppear with templateId:%{public}s', templateId);
 
     this.template = BuiltInTemplates.getTemplateById(templateId) || null;
     if (this.template) {
@@ -34,6 +39,7 @@ struct DiseaseManagePage {
 
   onPageShow() {
     if (this.template) {
+      hilog.debug(DOMAIN, TAG, 'onPageShow, reloading data for:%{public}s', this.template.name);
       this.loadData();
     }
   }
@@ -49,7 +55,7 @@ struct DiseaseManagePage {
         this.template.id,
         currentGroup.id
       );
-      console.log('records', this.records);
+      hilog.info(DOMAIN, TAG, 'Loaded records count:%{public}d for group:%{public}s', this.records.length, currentGroup.name);
     }
   }
 
@@ -295,9 +301,9 @@ struct DiseaseManagePage {
       // Builder方法不能返回null，使用空组件代替
       Blank();
     } else {
-      Row() {
+      Row({ space: 12 }) {
         Button(`录入${this.template!.indicatorGroups[0].name}`)
-          .width('100%')
+          .layoutWeight(1)
           .backgroundColor(this.template!.color)
           .onClick(() => {
             router.pushUrl({

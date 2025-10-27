@@ -1,9 +1,13 @@
 import router from '@ohos.router';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { MedicineData, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../../utils/NotificationManager';
 import common from '@ohos.app.ability.common';
+
+const TAG = 'AddMedicinePage';
+const DOMAIN = 0x0000;
 
 @Entry
 @Component
@@ -35,6 +39,7 @@ struct AddMedicinePage {
   }
 
   async saveData() {
+    hilog.debug(DOMAIN, TAG, 'saveData called');
     if (!this.medicineName) {
       promptAction.showToast({ message: '请输入药品名称' });
       return;
@@ -107,6 +112,22 @@ struct AddMedicinePage {
   // 创建用药提醒
   async createMedicineReminders(medicine: MedicineData) {
     const notificationMgr = NotificationManager.getInstance();
+    
+    // 检查当前提醒数量
+    const stats = await notificationMgr.getReminderStats();
+    hilog.info(DOMAIN, TAG, 'Current reminder stats: %{public}d/%{public}d', stats.current, stats.max);
+    
+    // 如果剩余提醒数不足以创建新提醒
+    if (stats.remaining < medicine.frequency.length) {
+      hilog.warn(DOMAIN, TAG, 'Not enough reminder slots. Required: %{public}d, Remaining: %{public}d', 
+        medicine.frequency.length, stats.remaining);
+      promptAction.showToast({ 
+        message: `提醒数量已达上限，仅为部分时间设置提醒` 
+      });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
 
     // 为每个服用时间创建提醒
     for (const time of medicine.frequency) {
@@ -121,9 +142,22 @@ struct AddMedicinePage {
         `${medicine.name}用药提醒`
       );
       
-      if (!success) {
-        console.warn(`Failed to create reminder for ${medicine.name} at ${timeInfo.hour}:${timeInfo.minute}`);
+      if (success) {
+        successCount++;
+        hilog.debug(DOMAIN, TAG, 'Reminder created for %{public}s at %{public}d:%{public}d', 
+          medicine.name, timeInfo.hour, timeInfo.minute);
+      } else {
+        failCount++;
+        hilog.warn(DOMAIN, TAG, `Failed to create reminder for ${medicine.name} at ${timeInfo.hour}:${timeInfo.minute}`);
       }
+    }
+    
+    // 显示提醒创建结果
+    if (failCount > 0) {
+      hilog.warn(DOMAIN, TAG, 'Reminder creation: %{public}d succeeded, %{public}d failed', successCount, failCount);
+      promptAction.showToast({ 
+        message: `已为 ${successCount} 个时间设置提醒，${failCount} 个失败（提醒数达上限）` 
+      });
     }
   }
 

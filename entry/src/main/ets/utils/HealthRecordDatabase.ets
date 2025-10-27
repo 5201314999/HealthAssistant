@@ -2,12 +2,15 @@
 
 import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HealthRecord,IDiseaseTemplate } from '../models/DiseaseTemplate';
-import { MedicineData, MedicineRecord } from '../models/MedicineData';
+import { MedicineData, MedicineRecord, RemindTime } from '../models/MedicineData';
 import { ErrorUtils } from './ErrorUtil'
 
 const DB_NAME = 'medical_assistant.db';
 const DB_VERSION = 1;
+const TAG = 'HealthRecordDatabase';
+const DOMAIN = 0x0000;
 
 /**
  * 数据库表定义
@@ -475,7 +478,7 @@ export class HealthRecordDatabase {
       resultSet.close();
       return templates;
     } catch (err) {
-      console.error('[HealthRecordDatabase] 获取激活疾病模板失败:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Get active disease templates failed:%{public}s', JSON.stringify(err));
       return [];
     }
   }
@@ -729,7 +732,7 @@ export class HealthRecordDatabase {
 
       return { templateId, templateName, activatedAt, isDeleted, deletedAt };
     } catch (err) {
-      console.error('[HealthRecordDatabase] 映射活跃疾病模板失败:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Map active disease template failed:%{public}s', JSON.stringify(err));
       return null;
     }
   }
@@ -741,17 +744,25 @@ export class HealthRecordDatabase {
       medicine.name = resultSet.getString(resultSet.getColumnIndex('name'));
       medicine.specification = resultSet.getString(resultSet.getColumnIndex('specification'));
       medicine.dosage = resultSet.getString(resultSet.getColumnIndex('dosage'));
-      medicine.frequency = JSON.parse(resultSet.getString(resultSet.getColumnIndex('frequency')));
-      medicine.reminderTimes = JSON.parse(resultSet.getString(resultSet.getColumnIndex('reminder_times')));
+      
+      // 安全地解析 frequency（应该是数组）
+      const frequencyStr = resultSet.getString(resultSet.getColumnIndex('frequency'));
+      medicine.frequency = JSON.parse(frequencyStr) as string[];
+      
+      // 安全地解析 reminderTimes（应该是 Record 对象）
+      const reminderTimesStr = resultSet.getString(resultSet.getColumnIndex('reminder_times'));
+      medicine.reminderTimes = JSON.parse(reminderTimesStr) as Record<string, RemindTime>;
+      
       medicine.startDate = resultSet.getLong(resultSet.getColumnIndex('start_date'));
       medicine.endDate = resultSet.getLong(resultSet.getColumnIndex('end_date'));
       medicine.stock = resultSet.getLong(resultSet.getColumnIndex('stock'));
       medicine.note = resultSet.getString(resultSet.getColumnIndex('note'));
       medicine.reminderEnabled = resultSet.getLong(resultSet.getColumnIndex('reminder_enabled')) === 1;
-
+      
+      hilog.debug(DOMAIN, TAG, 'Mapped medicine: %{public}s', medicine.name);
       return medicine;
     } catch (err) {
-      console.error('[HealthRecordDatabase] 映射药品数据失败:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Map medicine data failed:%{public}s', JSON.stringify(err));
       return null;
     }
   }
@@ -768,10 +779,11 @@ export class HealthRecordDatabase {
       record.taken = resultSet.getLong(resultSet.getColumnIndex('taken')) === 1;
       record.takenTime = resultSet.getLong(resultSet.getColumnIndex('taken_time'));
       record.note = resultSet.getString(resultSet.getColumnIndex('note'));
-
+      
+      hilog.debug(DOMAIN, TAG, 'Mapped medicine record: %{public}s', record.id);
       return record;
     } catch (err) {
-      console.error('[HealthRecordDatabase] 映射用药记录失败:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Map medicine record failed:%{public}s', JSON.stringify(err));
       return null;
     }
   }

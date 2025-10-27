@@ -3,6 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { HealthRecordDatabase } from '../utils/HealthRecordDatabase';
 import { UserPreferenceManager } from '../utils/DataPreference';
+import { ErrorUtils } from '../utils/ErrorUtil';
 
 const DOMAIN = 0x0000;
 
@@ -24,15 +25,27 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
-    // 初始化数据管理器（在显示UI前完成）
-    this.initializeDataManager();
-
-    windowStage.loadContent('pages/common/MainPage', (err) => {
-      if (err.code) {
-        hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
-        return;
-      }
-      hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+    // 初始化数据管理器（必须在显示UI前完成）
+    this.initializeDataManager().then(() => {
+      // 等待初始化完成后再加载内容
+      windowStage.loadContent('pages/common/MainPage', (err) => {
+        if (err.code) {
+          hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
+          return;
+        }
+        hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      });
+    }).catch((err:object) => {
+      const e = ErrorUtils.toError(err)
+      hilog.error(DOMAIN, 'testTag', 'Failed to initialize before loading content: %{public}s', JSON.stringify(e));
+      // 即使初始化失败也要加载内容
+      windowStage.loadContent('pages/common/MainPage', (err) => {
+        if (err.code) {
+          hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(e));
+          return;
+        }
+        hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      });
     });
   }
 

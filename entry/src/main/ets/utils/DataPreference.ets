@@ -6,10 +6,13 @@
  */
 
 import { preferences } from '@kit.ArkData';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ErrorUtils } from './ErrorUtil';
 
 const PREFERENCES_NAME = 'medical_assistant_preferences';
 const USER_PREFS_KEY = 'user_preferences';
+const TAG = 'UserPreferenceManager';
+const DOMAIN = 0x0000;
 
 export interface UserPreferences {
   joinDate: number;
@@ -60,7 +63,7 @@ export class UserPreferenceManager {
       // 获取Preferences实例
       this.dataPreferences = await preferences.getPreferences(context, PREFERENCES_NAME);
       this.isInitialized = true;
-      console.info('[UserPreferenceManager] Preferences初始化成功');
+      hilog.info(DOMAIN, TAG, 'Preferences initialized successfully');
       
       // 初始化用户首次使用时间
       const userPrefs = await this.getUserPreferences();
@@ -71,7 +74,7 @@ export class UserPreferenceManager {
     } catch (err) {
       this.isInitialized = false;
       const e =ErrorUtils.toError(err)
-      console.error('[UserPreferenceManager] 初始化失败:', JSON.stringify(e));
+      hilog.error(DOMAIN, TAG, 'Init failed:%{public}s', JSON.stringify(e));
       throw e;
     }
   }
@@ -99,7 +102,7 @@ export class UserPreferenceManager {
         strictReminderEnabled: prefs.strictReminderEnabled !== undefined ? prefs.strictReminderEnabled : false
       };
     } catch (err) {
-      console.error('[UserPreferenceManager] 获取用户偏好设置失败:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Get preferences failed:%{public}s', JSON.stringify(err));
       return {
         joinDate: 0,
         notificationEnabled: true,
@@ -116,10 +119,10 @@ export class UserPreferenceManager {
       this.checkInitialized();
       this.dataPreferences!.putSync(USER_PREFS_KEY, JSON.stringify(prefs));
       await this.dataPreferences!.flush();
-      console.info('[UserPreferenceManager] 用户偏好设置已保存');
+      hilog.info(DOMAIN, TAG, 'User preferences saved successfully');
     } catch (err) {
       const e=ErrorUtils.toError(err)
-      console.error('[UserPreferenceManager] 保存用户偏好设置失败:', JSON.stringify(e));
+      hilog.error(DOMAIN, TAG, 'Save preferences failed:%{public}s', JSON.stringify(e));
       throw e;
     }
   }

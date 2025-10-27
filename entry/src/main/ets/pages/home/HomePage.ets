@@ -1,14 +1,33 @@
 import router from '@ohos.router';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { UserPreferenceManager } from '../../utils/DataPreference';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate } from '../../models/DiseaseTemplate';
 import { HealthRecord } from '../../models/DiseaseTemplate';
 import { MedicineRecord } from '../../models/MedicineData';
+
+const TAG = 'HomePage';
+const DOMAIN = 0x0000;
+
 interface BloodPressure {
   systolic: number;
   diastolic: number;
 }
+
+interface IndicatorItem {
+  name: string;
+  value: string | number;
+  unit?: string;
+}
+
+interface HealthIndicator {
+  diseaseId: string;
+  diseaseName: string;
+  diseaseColor: string;
+  indicators: IndicatorItem[];
+}
+
 @Entry
 @Component
 export struct HomePage {
@@ -20,35 +39,53 @@ export struct HomePage {
   @State templateCounts: Map<string, number> = new Map();
   @State todayMedicineRecords: MedicineRecord[] = [];
   @State activeTemplates: string[] = [];
+  @State healthIndicators: HealthIndicator[] = []; // Swiper 数据源
+  private indicatorSwiperController: SwiperController = new SwiperController(); // Swiper 控制器
+  @State diseaseIndicators: Map<string, IndicatorItem[]> = new Map(); // 存储每个疾病的核心指标
+  @State swiperIndex:number=0
 
   async aboutToAppear() {
+    hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear start');
     await this.loadData();
+    hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear completed');
   }
 
   onPageShow() {
     // 页面显示时重新加载数据，确保返回首页时显示最新的疾病列表
+    hilog.debug(DOMAIN, TAG, 'HomePage onPageShow, reloading data');
+    // 注意：这里需要使用异步处理确保数据加载完成后UI才更新
     this.loadData();
   }
 
   async loadData() {
+    hilog.info(DOMAIN, TAG, 'LoadData start');
     const db = HealthRecordDatabase.getInstance();
     
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
+    hilog.info(DOMAIN, TAG, 'Loaded templates count:%{public}d', this.templates.length);
     
     // 获取已激活的疾病模板
     const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
     this.activeTemplates = activeTemplatesFromDB.map((t) => t.templateId);
+    hilog.info(DOMAIN, TAG, 'Active templates count:%{public}d', this.activeTemplates.length);
     
-    // 加载每个模板的记录数
+    // 计算疾病数量（从激活的疾病模板获取）
+    this.diseaseCount = this.activeTemplates.length;
+    hilog.info(DOMAIN, TAG, 'Disease count:%{public}d', this.diseaseCount);
+    
+    // 加载每个模板的记录数和核心指标
+    this.diseaseIndicators.clear();
     for (const template of this.templates) {
       const count = await db.getRecordCount(template.id);
       this.templateCounts.set(template.id, count);
+      
+      // 加载该疾病的核心指标（最多3个）
+      await this.loadDiseaseIndicators(template, db);
     }
-    console.log('this.activeTemplates=======:', this.activeTemplates)
     
-    // 计算疾病数量
-    this.diseaseCount = this.activeTemplates.length;
+    // 加载 Swiper 数据：每个激活疾病的最近诊疗记录指标
+    await this.loadHealthIndicators(db);
     
     // 加载最新血压数据
     const latestBP = await db.getLatestHealthRecord('hypertension', 'blood_pressure');
@@ -56,19 +93,171 @@ export struct HomePage {
       const systolic = latestBP.getIndicator('systolic') as number;
       const diastolic = latestBP.getIndicator('diastolic') as number;
       this.latestBloodPressure = { systolic, diastolic };
+      hilog.debug(DOMAIN, TAG, 'Latest blood pressure - systolic:%{public}d, diastolic:%{public}d', systolic, diastolic);
     }
     
     // 加载最新血糖数据
     const latestDiabetes = await db.getLatestHealthRecord('diabetes', 'glucose');
     if (latestDiabetes) {
       this.latestGlucose = latestDiabetes.getIndicator('glucose') as number;
+      hilog.debug(DOMAIN, TAG, 'Latest glucose:%{public}f', this.latestGlucose as number);
     }
     
     // 加载今日用药记录
     this.todayMedicineRecords = await db.getMedicineRecords(Date.now() - 24 * 60 * 60 * 1000, Date.now());
+    hilog.info(DOMAIN, TAG, 'Today medicine records count:%{public}d', this.todayMedicineRecords.length);
     
     // 触发UI更新
     this.templateCounts = new Map(this.templateCounts);
+    this.activeTemplates = [...this.activeTemplates];
+    this.diseaseIndicators = new Map(this.diseaseIndicators);
+    this.healthIndicators = [...this.healthIndicators];
+    hilog.debug(DOMAIN, TAG, 'LoadData completed');
+  }
+
+  private async loadDiseaseIndicators(template: DiseaseTemplate, db: HealthRecordDatabase): Promise<void> {
+    try {
+      const indicators: IndicatorItem[] = [];
+      
+      // 获取该疾病的第一组指标定义（最多前3个）
+      if (template.indicatorGroups.length > 0) {
+        const firstGroup = template.indicatorGroups[0];
+        const indicatorDefs = firstGroup.indicators.slice(0, 3); // 只取前3个指标
+        
+        // 获取每个指标的最新值
+        for (const indicatorDef of indicatorDefs) {
+          try {
+            const latestRecord = await db.getLatestHealthRecord(template.id, firstGroup.id);
+            if (latestRecord) {
+              const value = latestRecord.getIndicator(indicatorDef.id);
+              if (value !== undefined) {
+                indicators.push({
+                  name: indicatorDef.name,
+                  value: value,
+                  unit: indicatorDef.unit
+                });
+                hilog.debug(DOMAIN, TAG, 'Loaded indicator: %{public}s=%{public}s', indicatorDef.name, String(value));
+              }
+            }
+          } catch (err) {
+            const error = err as Error;
+            hilog.warn(DOMAIN, TAG, 'Failed to load indicator %{public}s: %{public}s', indicatorDef.name, error.message);
+          }
+        }
+      }
+      
+      if (indicators.length > 0) {
+        this.diseaseIndicators.set(template.id, indicators);
+        hilog.info(DOMAIN, TAG, 'Loaded %{public}d indicators for disease: %{public}s', indicators.length, template.name);
+      }
+    } catch (err) {
+      const error = err as Error;
+      hilog.error(DOMAIN, TAG, 'Failed to load disease indicators for %{public}s: %{public}s', template.name, error.message);
+    }
+  }
+
+  private async loadHealthIndicators(db: HealthRecordDatabase): Promise<void> {
+    try {
+      this.healthIndicators = [];
+      
+      // 默认指标ID映射
+      const defaultIndicators: Record<string, string> = {
+        'hypertension': 'systolic',  // 高血压
+        'diabetes': 'glucose'        // 糖尿病
+      };
+      
+      // 默认单位
+      const defaultUnits: Record<string, string> = {
+        'systolic': 'mmHg',
+        'diastolic': 'mmHg',
+        'glucose': 'mmol/L'
+      };
+      
+      // 为每个激活的疾病加载最近的诊疗记录
+      for (const templateId of this.activeTemplates) {
+        const template = this.templates.find(t => t.id === templateId);
+        if (!template) continue;
+        
+        try {
+          // 获取该疾病最近的诊疗记录
+          const latestRecord = await db.getLatestHealthRecord(templateId);
+          if (!latestRecord) {
+            hilog.warn(DOMAIN, TAG, 'No health record found for disease: %{public}s', templateId);
+            continue;
+          }
+          
+          // 提取最多3个默认指标
+          const indicators: IndicatorItem[] = [];
+          
+          // 对于高血压，显示收缩压和舒张压
+          if (templateId === 'hypertension') {
+            const systolic = latestRecord.getIndicator('systolic');
+            const diastolic = latestRecord.getIndicator('diastolic');
+            
+            if (systolic !== undefined) {
+              indicators.push({
+                name: '收缩压',
+                value: systolic,
+                unit: defaultUnits['systolic']
+              });
+            }
+            if (diastolic !== undefined) {
+              indicators.push({
+                name: '舒张压',
+                value: diastolic,
+                unit: defaultUnits['diastolic']
+              });
+            }
+          }
+          // 对于糖尿病，显示血糖
+          else if (templateId === 'diabetes') {
+            const glucose = latestRecord.getIndicator('glucose');
+            if (glucose !== undefined) {
+              indicators.push({
+                name: '血糖',
+                value: glucose,
+                unit: defaultUnits['glucose']
+              });
+            }
+          }
+          // 其他疾病：从第一组指标中取前3个
+          else {
+            if (template.indicatorGroups.length > 0) {
+              const firstGroup = template.indicatorGroups[0];
+              for (const indicatorDef of firstGroup.indicators.slice(0, 3)) {
+                const value = latestRecord.getIndicator(indicatorDef.id);
+                if (value !== undefined) {
+                  indicators.push({
+                    name: indicatorDef.name,
+                    value: value,
+                    unit: indicatorDef.unit
+                  });
+                }
+              }
+            }
+          }
+          
+          // 如果有指标数据，添加到列表
+          if (indicators.length > 0) {
+            this.healthIndicators.push({
+              diseaseId: templateId,
+              diseaseName: template.name,
+              diseaseColor: template.color,
+              indicators: indicators
+            });
+            hilog.info(DOMAIN, TAG, 'Loaded health indicators for: %{public}s', template.name);
+          }
+        } catch (err) {
+          const error = err as Error;
+          hilog.warn(DOMAIN, TAG, 'Failed to load indicators for %{public}s: %{public}s', templateId, error.message);
+        }
+      }
+      
+      hilog.info(DOMAIN, TAG, 'Loaded %{public}d health indicator sets', this.healthIndicators.length);
+    } catch (err) {
+      const error = err as Error;
+      hilog.error(DOMAIN, TAG, 'Failed to load health indicators: %{public}s', error.message);
+    }
   }
 
   build() {
@@ -177,69 +366,55 @@ export struct HomePage {
           }
           .width('100%')
 
-          // 健康数据展示
-          Row({ space: 12 }) {
-            // 收缩压
-            Column({ space: 4 }) {
-              Text('收缩压')
-                .fontSize(13)
-                .fontColor('#757575')
+          // Swiper 健康数据展示
+          if (this.healthIndicators.length > 0) {
+            Column() {
+              Swiper(this.indicatorSwiperController) {
+                ForEach(this.healthIndicators, (item: HealthIndicator) => {
+                  this.HealthIndicatorCard(item);
+                })
+              }
+              .index(0)
+              .autoPlay(false)
+              .duration(300)
+              .curve(Curve.Linear)
+              .onChange((index: number) => {
+                this.swiperIndex=index
+              })
+              .height(160)
+              .margin({ left: 16, right: 16 })
 
-              Text(this.latestBloodPressure ? `${this.latestBloodPressure.systolic}` : '--')
-                .fontSize(32)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#212121')
-
-              Text('mmHg')
-                .fontSize(12)
-                .fontColor('#9E9E9E')
+              // 指示器
+              if (this.healthIndicators.length > 1) {
+                Row({ space: 6 }) {
+                  ForEach(this.healthIndicators, (_: HealthIndicator, index: number) => {
+                    Circle()
+                      .width(8)
+                      .height(8)
+                      .fill(index === this.swiperIndex ? $r('app.color.primary') : '#BDBDBD')
+                  })
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.Center)
+                .padding({ top: 12 })
+              }
             }
-            .layoutWeight(1)
-            .padding(16)
-            .backgroundColor('#FAFAFA')
-            .borderRadius(12)
-
-            // 舒张压
-            Column({ space: 4 }) {
-              Text('舒张压')
-                .fontSize(13)
-                .fontColor('#757575')
-
-              Text(this.latestBloodPressure ? `${this.latestBloodPressure.diastolic}` : '--')
-                .fontSize(32)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#212121')
-
-              Text('mmHg')
-                .fontSize(12)
+            .width('100%')
+          } else {
+            Column() {
+              Text('暂无健康数据')
+                .fontSize(14)
                 .fontColor('#9E9E9E')
+                .width('100%')
+                .textAlign(TextAlign.Center)
             }
-            .layoutWeight(1)
-            .padding(16)
-            .backgroundColor('#FAFAFA')
+            .width('100%')
+            .height(160)
+            .justifyContent(FlexAlign.Center)
+            .backgroundColor('#F5F5F5')
             .borderRadius(12)
-
-            // 血糖
-            Column({ space: 4 }) {
-              Text('血糖')
-                .fontSize(13)
-                .fontColor('#757575')
-
-              Text(this.latestGlucose ? `${this.latestGlucose.toFixed(1)}` : '--')
-                .fontSize(32)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#212121')
-
-              Text('mmol/L')
-                .fontSize(12)
-                .fontColor('#9E9E9E')
-            }
-            .layoutWeight(1)
-            .padding(16)
-            .backgroundColor('#FAFAFA')
-            .borderRadius(12)
+            .margin({ left: 16, right: 16 })
           }
-          .width('100%')
 
           // 查看历史就诊记录按钮
           Button({ type: ButtonType.Normal }) {
@@ -271,7 +446,6 @@ export struct HomePage {
 
         // 添加疾病和就诊记录按钮
         Row({ space: 12 }) {
-          // 添加疾病按钮
           Button() {
             Column({ space: 8 }) {
               Image($r('app.media.plus'))
@@ -295,7 +469,6 @@ export struct HomePage {
             });
           })
 
-          // 添加就诊记录按钮
           Button() {
             Column({ space: 8 }) {
               Image($r('app.media.calendar'))
@@ -328,21 +501,90 @@ export struct HomePage {
         })
 
         // 疾病列表
-        Column({ space: 12 }) {
-          ForEach(this.templates, (template: DiseaseTemplate) => {
-            // 显示已激活的疾病模板，无论是否有记录
-            if (this.activeTemplates.includes(template.id)) {
-              this.DiseaseCard(template, this.templateCounts.get(template.id) || 0);
-            }
-          })
+        if (this.activeTemplates.length > 0) {
+          Column({ space: 12 }) {
+            ForEach(this.templates, (template: DiseaseTemplate) => {
+              if (this.activeTemplates.includes(template.id)) {
+                this.DiseaseCard(template, this.templateCounts.get(template.id) || 0);
+              }
+            })
+          }
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 16 })
+        } else {
+          Column() {
+            Text('📋')
+              .fontSize(60)
+              .margin({ top: 40, bottom: 16 })
+
+            Text('还未添加任何疾病')
+              .fontSize(16)
+              .fontColor('#9E9E9E')
+              .margin({ bottom: 8 })
+
+            Text('点击上方"添加疾病"开始管理您的慢性病')
+              .fontSize(13)
+              .fontColor('#BDBDBD')
+              .textAlign(TextAlign.Center)
+              .padding({ left: 20, right: 20 })
+          }
+          .width('100%')
+          .alignItems(HorizontalAlign.Center)
+          .padding({ left: 16, right: 16, top: 40, bottom: 40 })
         }
-        .width('100%')
-        .padding({ left: 16, right: 16, bottom: 16 })
       }
       .width('100%')
-      .constraintSize({ minHeight: '100%' })
     }
     .layoutWeight(1)
+    .backgroundColor('#F5F5F5')
+  }
+
+  @Builder
+  HealthIndicatorCard(item: HealthIndicator) {
+    Column({ space: 12 }) {
+      // 疾病标题
+      Row() {
+        Text(item.diseaseName)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#212121')
+          .layoutWeight(1)
+
+        Text('最近记录')
+          .fontSize(12)
+          .fontColor('#BDBDBD')
+      }
+      .width('100%')
+
+      // 指标数据
+      Row({ space: 12 }) {
+        ForEach(item.indicators, (indicator: IndicatorItem) => {
+          Column({ space: 4 }) {
+            Text(indicator.name)
+              .fontSize(12)
+              .fontColor('#757575')
+
+            Text(`${indicator.value}`)
+              .fontSize(20)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#212121')
+
+            if (indicator.unit) {
+              Text(indicator.unit)
+                .fontSize(11)
+                .fontColor('#9E9E9E')
+            }
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Center)
+        })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding(16)
+    .backgroundColor('#FFFFFF')
+    .borderRadius(12)
   }
 
   @Builder

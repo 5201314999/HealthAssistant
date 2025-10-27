@@ -4,44 +4,55 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { DiseaseTemplate, IndicatorGroup, HealthRecord, IndicatorDefinition, IndicatorType } from '../../models/DiseaseTemplate';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 
-
+const TAG = 'AddMedicalRecordPage';
+const DOMAIN = 0x0000;
 
 interface TemplateShow {
   value: string;
-  text:string;
+  text: string;
 }
+
 @Entry
 @Component
 struct AddMedicalRecordPage {
   @State templates: DiseaseTemplate[] = [];
   @State selectedTemplateId: string = '';
-  @State selectedIndex:number=0;
+  @State selectedIndex: number = 0;
+  @State selectedTemplate: DiseaseTemplate | null = null;
   @State visitDate: number = Date.now();
   @State hospital: string = '';
   @State doctor: string = '';
   @State diagnosis: string = '';
   @State treatment: string = '';
   @State notes: string = '';
+  @State indicators: Record<string, string | number> = {}; // 动态指标
 
-  aboutToAppear() {
-    // 获取所有活跃的疾病模板
-    this.loadActiveTemplates();
+  async aboutToAppear() {
+    hilog.debug(DOMAIN, TAG, 'aboutToAppear start');
+    // 获取已激活的疾病模板
+    await this.loadActiveTemplates();
   }
 
   async loadActiveTemplates() {
     const db = HealthRecordDatabase.getInstance();
-    const allTemplates = BuiltInTemplates.getAllTemplates();
-    this.templates = [];
-    
-    for (const template of allTemplates) {
-      const count = await db.getRecordCount(template.id);
-      if (count > 0) {
-        this.templates.push(template);
+    try {
+      const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
+      this.templates = [];
+      
+      for (const active of activeTemplatesFromDB) {
+        const template = BuiltInTemplates.getTemplateById(active.templateId);
+        if (template) {
+          this.templates.push(template);
+        }
       }
+      hilog.info(DOMAIN, TAG, 'Loaded active templates count:%{public}d', this.templates.length);
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Failed to load active templates: %{public}s', JSON.stringify(err));
     }
   }
 
@@ -55,6 +66,25 @@ struct AddMedicalRecordPage {
         this.visitDate = value.getTime();
       }
     });
+  }
+
+  // 当选择疾病时，初始化该疾病的指标
+  onTemplateSelected(index: number) {
+    this.selectedIndex = index;
+    this.selectedTemplate = this.templates[index];
+    this.selectedTemplateId = this.selectedTemplate?.id || '';
+    
+    // 初始化指标对象
+    this.indicators = {};
+    if (this.selectedTemplate) {
+      const firstGroup = this.selectedTemplate.indicatorGroups[0];
+      if (firstGroup) {
+        firstGroup.indicators.forEach((indicator: IndicatorDefinition) => {
+          this.indicators[indicator.id] = '';
+        });
+      }
+    }
+    hilog.debug(DOMAIN, TAG, 'Template selected: %{public}s', this.selectedTemplateId);
   }
 
   async saveMedicalRecord() {
@@ -87,10 +117,21 @@ struct AddMedicalRecordPage {
     record.setIndicator('diagnosis', this.diagnosis);
     record.setIndicator('treatment', this.treatment);
     record.note = this.notes;
+    
+    // 添加动态指标
+    Object.keys(this.indicators).forEach((key: string) => {
+      record.setIndicator(key, this.indicators[key]);
+    });
 
-    await HealthRecordDatabase.getInstance().saveHealthRecord(record);
-    promptAction.showToast({ message: '保存成功' });
-    router.back();
+    try {
+      await HealthRecordDatabase.getInstance().saveHealthRecord(record);
+      hilog.info(DOMAIN, TAG, 'Medical record saved successfully');
+      promptAction.showToast({ message: '保存成功' });
+      router.back();
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Failed to save medical record: %{public}s', JSON.stringify(err));
+      promptAction.showToast({ message: '保存失败' });
+    }
   }
 
   build() {
@@ -110,7 +151,6 @@ struct AddMedicalRecordPage {
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
 
-        // 占位元素保持标题居中
         Row()
           .width(24)
       }
@@ -145,16 +185,77 @@ struct AddMedicalRecordPage {
                   .backgroundColor('#F5F5F5')
                   .borderRadius(8)
                   .onSelect((index: number) => {
-                    this.selectedTemplateId = this.templates[index].id;
-                    this.selectedIndex=index
+                    this.onTemplateSelected(index);
                   })
               } else {
-                Text('暂无疾病，请先添加疾病')
+                Text('暂无激活疾病，请先在首页添加疾病')
                   .fontSize(14)
-                  .fontColor('#757575')
+                  .fontColor('#F44336')
+                  .fontWeight(FontWeight.Medium)
               }
             }
             .width('100%')
+
+            // 动态指标输入
+            if (this.selectedTemplate) {
+              Column({ space: 8 }) {
+                Text('疾病指标')
+                  .fontSize(16)
+                  .fontColor('#212121')
+                  .width('100%')
+                
+                ForEach(this.selectedTemplate.indicatorGroups[0]?.indicators || [], (indicator: IndicatorDefinition) => {
+                  Column({ space: 8 }) {
+                    Row() {
+                      Text(indicator.name)
+                        .fontSize(14)
+                        .fontColor('#212121')
+                      
+                      if (indicator.unit) {
+                        Text(`(${indicator.unit})`)
+                          .fontSize(12)
+                          .fontColor('#9E9E9E')
+                      }
+                    }
+                    .width('100%')
+                    
+                    if (indicator.type === IndicatorType.NUMBER) {
+                      TextInput({
+                        placeholder: `请输入${indicator.name}`,
+                        text: String(this.indicators[indicator.id] || '')
+                      })
+                        .type(InputType.Number)
+                        .backgroundColor('#F5F5F5')
+                        .borderRadius(8)
+                        .onChange((value: string) => {
+                          this.indicators[indicator.id] = value;
+                        })
+                    } else if (indicator.type === IndicatorType.TEXT) {
+                      TextInput({
+                        placeholder: `请输入${indicator.name}`,
+                        text: String(this.indicators[indicator.id] || '')
+                      })
+                        .backgroundColor('#F5F5F5')
+                        .borderRadius(8)
+                        .onChange((value: string) => {
+                          this.indicators[indicator.id] = value;
+                        })
+                    } else if (indicator.type === IndicatorType.SELECT && indicator.options) {
+                      Select(indicator.options.map(opt => ({ value: opt.value, text: opt.label } as TemplateShow)))
+                        .value(String(this.indicators[indicator.id] || ''))
+                        .font({ size: 14 })
+                        .backgroundColor('#F5F5F5')
+                        .borderRadius(8)
+                        .onSelect((index: number) => {
+                          this.indicators[indicator.id] = indicator.options![index].value;
+                        })
+                    }
+                  }
+                  .width('100%')
+                })
+              }
+              .width('100%')
+            }
 
             // 就诊日期
             Column({ space: 8 }) {

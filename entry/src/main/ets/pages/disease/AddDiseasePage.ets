@@ -4,9 +4,13 @@
 
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import { DiseaseTemplate } from '../../models/DiseaseTemplate';
+
+const TAG = 'AddDiseasePage';
+const DOMAIN = 0x0000;
 
 @Entry
 @Component
@@ -17,15 +21,20 @@ struct AddDiseasePage {
   @State isAdding: boolean = false; // 添加防抖标志
 
   async aboutToAppear() {
+    hilog.debug(DOMAIN, TAG, 'aboutToAppear start');
     // 获取所有可用的疾病模板
     this.templates = BuiltInTemplates.getAllTemplates();
+    hilog.info(DOMAIN, TAG, 'Loaded templates count:%{public}d', this.templates.length);
+    
     // 获取已激活的疾病模板
     const db = HealthRecordDatabase.getInstance();
     const activeTemplates = await db.getActiveDiseaseTemplates();
     this.activeTemplates = activeTemplates.map((t) => t.templateId);
+    hilog.info(DOMAIN, TAG, 'Active templates count:%{public}d', this.activeTemplates.length);
   }
 
   async addDisease() {
+    hilog.debug(DOMAIN, TAG, 'addDisease called, selectedTemplate:%{public}s', this.selectedTemplateId);
     // 防抖：防止快速重复点击
     if (this.isAdding) {
       promptAction.showToast({ message: '操作处理中，请稍候...' });
@@ -39,6 +48,7 @@ struct AddDiseasePage {
 
     // 检查是否已经添加过该疾病
     if (this.activeTemplates.includes(this.selectedTemplateId)) {
+      hilog.warn(DOMAIN, TAG, 'Disease already exists:%{public}s', this.selectedTemplateId);
       promptAction.showToast({ message: '该疾病已经添加过了，无需重复添加' });
       return;
     }
@@ -48,6 +58,7 @@ struct AddDiseasePage {
       // 获取选中的模板名称
       const template = this.templates.find((t) => t.id === this.selectedTemplateId);
       if (!template) {
+        hilog.error(DOMAIN, TAG, 'Template not found:%{public}s', this.selectedTemplateId);
         promptAction.showToast({ message: '未找到选择的疾病' });
         this.isAdding = false;
         return;
@@ -56,6 +67,7 @@ struct AddDiseasePage {
       // 激活疾病模板
       const db = HealthRecordDatabase.getInstance();
       await db.activateDiseaseTemplate(this.selectedTemplateId, template.name);
+      hilog.info(DOMAIN, TAG, 'Disease activated:%{public}s', template.name);
       
       // 立即更新本地状态，防止重复添加
       if (!this.activeTemplates.includes(this.selectedTemplateId)) {
@@ -72,7 +84,7 @@ struct AddDiseasePage {
       }, 500);
       
     } catch (err) {
-      console.error('Failed to add disease:', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Failed to add disease:%{public}s', JSON.stringify(err));
       promptAction.showToast({ message: '添加失败，请重试' });
     } finally {
       this.isAdding = false;

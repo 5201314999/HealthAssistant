@@ -2,6 +2,12 @@ import { UserPreferenceManager } from '../../utils/DataPreference';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { BuiltInTemplates } from '../../config/BuiltInTemplates';
 import router from '@ohos.router';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { promptAction } from '@kit.ArkUI';
+
+const TAG = 'ProfilePage';
+const DOMAIN = 0x0000;
+
 @Entry
 @Component
 export struct ProfilePage {
@@ -102,7 +108,7 @@ export struct ProfilePage {
                 .fontWeight(FontWeight.Bold)
                 .fontColor('#212121')
 
-              Text('zhangsan@email.com')
+              Text('')
                 .fontSize(14)
                 .fontColor('#757575')
 
@@ -292,9 +298,12 @@ export struct ProfilePage {
         }
         .width('100%')
         .margin({ left: 16, right: 16, top: 20, bottom: 20 })
+        .onClick(() => {
+          router.pushUrl({url:'pages/common/AboutPage'});
+        })
       }
       .width('100%')
-      .constraintSize({ minHeight: '100%' })
+      .constraintSize({minHeight:'100%'})
     }
     .width('100%')
     .height('100%')
