@@ -157,10 +157,10 @@ export struct AboutPage {
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
 
-              Image($r('sys.media.ohos_ic_public_arrow_right'))
-                .width(20)
-                .height(20)
-                .fillColor('#BDBDBD')
+              // Image($r('sys.media.ohos_ic_public_arrow_right'))
+              //   .width(20)
+              //   .height(20)
+              //   .fillColor('#BDBDBD')
             }
             .width('100%')
             .padding({ left: 12, right: 12, top: 12, bottom: 12 })

@@ -181,9 +181,11 @@ struct AddMedicalRecordPage {
                 Select(this.templates.map(t => ({ value: t.id, text: t.name } as TemplateShow)))
                   .selected(this.selectedIndex)
                   .value(this.getSelectedTemplateName())
+                  .width('100%')
                   .font({ size: 16 })
                   .backgroundColor('#F5F5F5')
                   .borderRadius(8)
+                  .optionWidth(OptionWidthMode.FIT_TRIGGER)
                   .onSelect((index: number) => {
                     this.onTemplateSelected(index);
                   })

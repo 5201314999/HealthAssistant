@@ -45,9 +45,8 @@ export struct HomePage {
   @State swiperIndex:number=0
 
   async aboutToAppear() {
-    hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear start');
     await this.loadData();
-    hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear completed');
+    hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear');
   }
 
   onPageShow() {
@@ -276,6 +275,7 @@ export struct HomePage {
             //   .fontWeight(600)
             //   .renderMode(SymbolRenderMode.SINGLE)
             //   .foregroundColor(Color.Blue)
+            Text('󰀡').fontSize(28).fontColor(Color.White)
           }
           .width(60)
           .height(60)
@@ -474,7 +474,7 @@ export struct HomePage {
               Image($r('app.media.calendar'))
                 .width(24)
                 .height(24)
-                .fillColor('#2196F3')
+                .fillColor('#4CAF50')
 
               Text('添加就诊记录')
                 .fontSize(14)
@@ -513,8 +513,8 @@ export struct HomePage {
           .padding({ left: 16, right: 16, bottom: 16 })
         } else {
           Column() {
-            Text('📋')
-              .fontSize(60)
+            Text('󰖿')
+              .fontSize(30)
               .margin({ top: 40, bottom: 16 })
 
             Text('还未添加任何疾病')

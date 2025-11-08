@@ -17,7 +17,7 @@ const DOMAIN = 0x0000;
 struct AddDiseasePage {
   @State templates: DiseaseTemplate[] = [];
   @State selectedTemplateId: string = '';
-  @State activeTemplates: string[] = [];
+  @State activeTemplateIds: string[] = [];
   @State isAdding: boolean = false; // 添加防抖标志
 
   async aboutToAppear() {
@@ -25,12 +25,12 @@ struct AddDiseasePage {
     // 获取所有可用的疾病模板
     this.templates = BuiltInTemplates.getAllTemplates();
     hilog.info(DOMAIN, TAG, 'Loaded templates count:%{public}d', this.templates.length);
-    
+
     // 获取已激活的疾病模板
     const db = HealthRecordDatabase.getInstance();
     const activeTemplates = await db.getActiveDiseaseTemplates();
-    this.activeTemplates = activeTemplates.map((t) => t.templateId);
-    hilog.info(DOMAIN, TAG, 'Active templates count:%{public}d', this.activeTemplates.length);
+    this.activeTemplateIds = activeTemplates.map((t) => t.templateId);
+    hilog.info(DOMAIN, TAG, 'Active templates count:%{public}d', this.activeTemplateIds.length);
   }
 
   async addDisease() {
@@ -47,7 +47,7 @@ struct AddDiseasePage {
     }
 
     // 检查是否已经添加过该疾病
-    if (this.activeTemplates.includes(this.selectedTemplateId)) {
+    if (this.activeTemplateIds.includes(this.selectedTemplateId)) {
       hilog.warn(DOMAIN, TAG, 'Disease already exists:%{public}s', this.selectedTemplateId);
       promptAction.showToast({ message: '该疾病已经添加过了，无需重复添加' });
       return;
@@ -68,21 +68,21 @@ struct AddDiseasePage {
       const db = HealthRecordDatabase.getInstance();
       await db.activateDiseaseTemplate(this.selectedTemplateId, template.name);
       hilog.info(DOMAIN, TAG, 'Disease activated:%{public}s', template.name);
-      
+
       // 立即更新本地状态，防止重复添加
-      if (!this.activeTemplates.includes(this.selectedTemplateId)) {
-        this.activeTemplates.push(this.selectedTemplateId);
+      if (!this.activeTemplateIds.includes(this.selectedTemplateId)) {
+        this.activeTemplateIds = [...this.activeTemplateIds,this.selectedTemplateId];
         // 触发UI更新
-        this.activeTemplates = JSON.parse(JSON.stringify(this.activeTemplates));
+        // this.activeTemplateIds = JSON.parse(JSON.stringify(this.activeTemplateIds));
       }
-      
+
       promptAction.showToast({ message: '添加成功' });
-      
+
       // 延迟返回，让用户看到成功提示
       setTimeout(() => {
         router.back();
       }, 500);
-      
+
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'Failed to add disease:%{public}s', JSON.stringify(err));
       promptAction.showToast({ message: '添加失败，请重试' });
@@ -128,13 +128,21 @@ struct AddDiseasePage {
 
           // 疾病列表
           Column({ space: 12 }) {
-            ForEach(this.templates, (template: DiseaseTemplate) => {
-                this.DiseaseTemplateCard(template,this.activeTemplates.includes(template.id));
+            ForEach(this.templates, (item: DiseaseTemplate) => {
+                DiseaseTemplateCard({
+                  template: item,
+                  activeIds: this.activeTemplateIds,
+                  isAlreadyAdded: this.activeTemplateIds.indexOf(item.id)>=0,
+                  onTemplateSelect: (id: string) => {
+                    this.selectedTemplateId = id
+                  }
+                })
             })
           }
           .width('100%')
           .padding({ left: 16, right: 16, bottom: 16 })
         }
+        .constraintSize({minHeight:'100%'})
       }
       .layoutWeight(1)
       .backgroundColor('#F5F5F5')
@@ -164,13 +172,22 @@ struct AddDiseasePage {
     .width('100%')
     .height('100%')
   }
+}
 
-  @Builder
-  DiseaseTemplateCard(template: DiseaseTemplate,isAlreadyAdded:boolean) {
+
+@ComponentV2
+struct DiseaseTemplateCard
+{
+  @Param template: DiseaseTemplate|null=null;
+  @Param activeIds: string[] =[];
+  @Param isAlreadyAdded:boolean = false;
+  @Event onTemplateSelect: (id: string) => void;
+
+  build() {
     Row() {
       // 图标
       Row() {
-        Text(template.name.charAt(0))
+        Text(this.template!.name.charAt(0))
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
           .fontColor('#FFFFFF')
@@ -178,23 +195,23 @@ struct AddDiseasePage {
       .width(48)
       .height(48)
       .borderRadius(24)
-      .backgroundColor(template.color)
+      .backgroundColor(this.template!.color)
       .justifyContent(FlexAlign.Center)
       .margin({ right: 12 })
 
       // 信息
       Column({ space: 4 }) {
-        Text(template.name)
+        Text(this.template!.name)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor('#212121')
 
-        if (isAlreadyAdded) {
+        if (this.isAlreadyAdded) {
           Text('已添加')
             .fontSize(13)
             .fontColor('#4CAF50')
         } else {
-          Text(template.description || '点击选择此疾病')
+          Text(this.template!.description || '点击选择此疾病')
             .fontSize(13)
             .fontColor('#9E9E9E')
         }
@@ -203,12 +220,12 @@ struct AddDiseasePage {
       .layoutWeight(1)
 
       // 选择状态
-      if (!isAlreadyAdded) {
-        Radio({ value: template.id, group: 'diseaseTemplates' })
-          .checked(this.selectedTemplateId === template.id)
+      if (!this.isAlreadyAdded) {
+        Radio({ value: this.template!.id, group: 'diseaseTemplates' })
+          .checked(false)
           .onChange((isChecked: boolean) => {
             if (isChecked) {
-              this.selectedTemplateId = template.id;
+              this.onTemplateSelect(this.template!.id)
             }
           })
       } else {
@@ -220,11 +237,11 @@ struct AddDiseasePage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(isAlreadyAdded ? '#F5F5F5' : '#FFFFFF')
+    .backgroundColor(this.isAlreadyAdded ? '#F5F5F5' : '#FFFFFF')
     .borderRadius(12)
     .onClick(() => {
-      if (!isAlreadyAdded) {
-        this.selectedTemplateId = template.id;
+      if (!this.isAlreadyAdded) {
+        this.onTemplateSelect(this.template!.id)
       }
     })
   }
