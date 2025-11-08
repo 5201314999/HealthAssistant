@@ -16,13 +16,13 @@ struct Index {
   async aboutToAppear() {
     // 初始化数据管理器
     await HealthRecordDatabase.getInstance().init(getContext(this));
-    
+
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
-    
+
     // 加载统计数据
     await this.loadStatistics();
-    
+
     // 生成今日用药记录
     await HealthRecordDatabase.getInstance().generateTodayMedicineRecords();
   }
@@ -37,14 +37,14 @@ struct Index {
       const count = await HealthRecordDatabase.getInstance().getRecordCount(template.id);
       this.templateCounts.set(template.id, count);
     }
-    
+
     // 加载用药数据
     const medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
     const todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
-    
+
     this.medicineCount = medicineList.length;
     this.todayMedicineCount = todayRecords.filter(r => !r.taken).length;
-    
+
     // 触发UI更新
     this.templateCounts = new Map(this.templateCounts);
   }
@@ -58,16 +58,16 @@ struct Index {
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
             .fontColor('#FFFFFF')
-          
+
           Text('您的健康管理专家')
             .fontSize(12)
             .fontColor('#E0F7FA')
             .margin({ top: 4 })
         }
         .alignItems(HorizontalAlign.Start)
-        
+
         Blank()
-        
+
         // 引导按钮
         Text('📖')
           .fontSize(24)
@@ -91,13 +91,13 @@ struct Index {
               Row() {
                 Text('⏰')
                   .fontSize(28)
-                
+
                 Column({ space: 4 }) {
                   Text(`您有 ${this.todayMedicineCount} 次用药待打卡`)
                     .fontSize(16)
                     .fontWeight(FontWeight.Medium)
                     .fontColor('#E65100')
-                  
+
                   Text('按时服药，健康生活')
                     .fontSize(12)
                     .fontColor('#FB8C00')
@@ -105,7 +105,7 @@ struct Index {
                 .alignItems(HorizontalAlign.Start)
                 .layoutWeight(1)
                 .margin({ left: 12 })
-                
+
                 Text('去查看 →')
                   .fontSize(14)
                   .fontColor('#FF6F00')
@@ -222,7 +222,7 @@ struct Index {
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor('#212121')
-          
+
           Text(subtitle)
             .fontSize(13)
             .fontColor('#757575')
@@ -236,7 +236,7 @@ struct Index {
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor(color)
-          
+
           Text('条记录')
             .fontSize(11)
             .fontColor('#9E9E9E')
