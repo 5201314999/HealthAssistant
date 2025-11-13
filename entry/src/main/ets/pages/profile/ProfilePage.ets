@@ -87,18 +87,29 @@ export struct ProfilePage {
         // 用户信息卡片
         Column() {
           Row() {
-            // 头像
+            // // 头像
+            // Row() {
+            //   Image($r('app.media.user'))
+            //     .width(32)
+            //     .height(32)
+            //     .fillColor('#FFFFFF')
+            // }
+            // .width(64)
+            // .height(64)
+            // .borderRadius(32)
+            // .backgroundColor($r('app.color.primary'))
+            // .justifyContent(FlexAlign.Center)
+            // .margin({ right: 16 })
+
+
             Row() {
-              Image($r('app.media.user'))
-                .width(32)
-                .height(32)
-                .fillColor('#FFFFFF')
+              Text('󰗳').fontSize(64).fontColor('#3b82f6')
             }
             .width(64)
             .height(64)
-            .borderRadius(32)
-            .backgroundColor($r('app.color.primary'))
-            .justifyContent(FlexAlign.Center)
+            // .borderRadius(32)
+            // .backgroundColor($r('app.color.primary'))
+            // .justifyContent(FlexAlign.Center)
             .margin({ right: 16 })
 
             // 用户信息
@@ -180,10 +191,11 @@ export struct ProfilePage {
           // 推送通知
           Row() {
             Row() {
-              Image($r('app.media.settings'))
-                .width(24)
-                .height(24)
-                .fillColor($r('app.color.primary'))
+              // Image($r('app.media.settings'))
+              //   .width(24)
+              //   .height(24)
+              //   .fillColor($r('app.color.primary'))
+              Text('󰀠').fontColor($r('app.color.primary')).fontSize(24)
             }
             .width(40)
             .height(40)
@@ -269,10 +281,12 @@ export struct ProfilePage {
         Column() {
           Row() {
             Row() {
-              Image($r('app.media.settings'))
-                .width(24)
-                .height(24)
-                .fillColor('#757575')
+              // Image($r('app.media.settings'))
+              //   .width(24)
+              //   .height(24)
+              //   .fillColor('#757575')
+
+              Text('󰄉').fontSize(20).fontColor('#757575')
             }
             .width(40)
             .height(40)
