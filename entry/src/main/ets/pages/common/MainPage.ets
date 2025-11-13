@@ -22,7 +22,7 @@ struct MainPage {
       Image(this.currentIndex === targetIndex ? selectedImg : normalImg)
         .width(24)
         .height(24)
-        .fillColor(this.currentIndex === targetIndex ? $r('app.color.primary') : '#9E9E9E')
+        // .fillColor(this.currentIndex === targetIndex ? $r('app.color.primary') : '#9E9E9E')
       
       Text(title)
         .fontSize(12)
@@ -39,17 +39,17 @@ struct MainPage {
       TabContent() {
         HomePage({ refreshKey: this.homePageRefreshKey })
       }
-      .tabBar(this.TabBuilder('首页', 0, $r('app.media.home'), $r('app.media.home')))
+      .tabBar(this.TabBuilder('首页', 0, $r('app.media.home_selected'), $r('app.media.home')))
 
       TabContent() {
         MedicineTabPage()
       }
-      .tabBar(this.TabBuilder('用药', 1, $r('app.media.pill'), $r('app.media.pill')))
+      .tabBar(this.TabBuilder('用药', 1, $r('app.media.pill_selected'), $r('app.media.pill')))
 
       TabContent() {
         ProfilePage()
       }
-      .tabBar(this.TabBuilder('我的', 2, $r('app.media.user'), $r('app.media.user')))
+      .tabBar(this.TabBuilder('我的', 2, $r('app.media.user_selected'), $r('app.media.user')))
     }
     .barMode(BarMode.Fixed)
     .barHeight(56)

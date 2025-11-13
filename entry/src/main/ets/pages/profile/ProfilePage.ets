@@ -215,50 +215,50 @@ export struct ProfilePage {
           .width('100%')
           .padding(16)
           .backgroundColor('#FFFFFF')
-
-          Divider()
-            .strokeWidth(0.5)
-            .color('#EEEEEE')
-            .margin({ left: 68 })
+          //
+          // Divider()
+          //   .strokeWidth(0.5)
+          //   .color('#EEEEEE')
+          //   .margin({ left: 68 })
 
           // 严格提醒
-          Row() {
-            Row() {
-              Image($r('sys.media.ohos_ic_public_clock'))
-                .width(24)
-                .height(24)
-                .fillColor('#FF9800')
-            }
-            .width(40)
-            .height(40)
-            .borderRadius(8)
-            .backgroundColor('#FFF3E0')
-            .justifyContent(FlexAlign.Center)
-            .margin({ right: 12 })
-
-            Column({ space: 2 }) {
-              Text('严格提醒')
-                .fontSize(15)
-                .fontColor('#212121')
-
-              Text('错过时间后继续提醒')
-                .fontSize(12)
-                .fontColor('#9E9E9E')
-            }
-            .alignItems(HorizontalAlign.Start)
-            .layoutWeight(1)
-
-            Toggle({ type: ToggleType.Switch, isOn: this.strictReminderEnabled })
-              .onChange(async (isOn: boolean) => {
-                this.strictReminderEnabled = isOn;
-                const userPrefs = await UserPreferenceManager.getInstance().getUserPreferences();
-                userPrefs.strictReminderEnabled = isOn;
-                await UserPreferenceManager.getInstance().saveUserPreferences(userPrefs);
-              })
-          }
-          .width('100%')
-          .padding(16)
-          .backgroundColor('#FFFFFF')
+          // Row() {
+          //   Row() {
+          //     Image($r('sys.media.ohos_ic_public_clock'))
+          //       .width(24)
+          //       .height(24)
+          //       .fillColor('#FF9800')
+          //   }
+          //   .width(40)
+          //   .height(40)
+          //   .borderRadius(8)
+          //   .backgroundColor('#FFF3E0')
+          //   .justifyContent(FlexAlign.Center)
+          //   .margin({ right: 12 })
+          //
+          //   Column({ space: 2 }) {
+          //     Text('严格提醒')
+          //       .fontSize(15)
+          //       .fontColor('#212121')
+          //
+          //     Text('错过时间后继续提醒')
+          //       .fontSize(12)
+          //       .fontColor('#9E9E9E')
+          //   }
+          //   .alignItems(HorizontalAlign.Start)
+          //   .layoutWeight(1)
+          //
+          //   Toggle({ type: ToggleType.Switch, isOn: this.strictReminderEnabled })
+          //     .onChange(async (isOn: boolean) => {
+          //       this.strictReminderEnabled = isOn;
+          //       const userPrefs = await UserPreferenceManager.getInstance().getUserPreferences();
+          //       userPrefs.strictReminderEnabled = isOn;
+          //       await UserPreferenceManager.getInstance().saveUserPreferences(userPrefs);
+          //     })
+          // }
+          // .width('100%')
+          // .padding(16)
+          // .backgroundColor('#FFFFFF')
         }
         .width('100%')
         .margin({ left: 16, right: 16, top: 20 })
