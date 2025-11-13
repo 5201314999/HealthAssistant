@@ -115,8 +115,10 @@ struct DiseaseManagePage {
   RecordListView(group: IndicatorGroup) {
     if (this.records.length === 0) {
       Column() {
-        Text('📋')
-          .fontSize(80)
+        Image($r('app.media.calendar'))
+          .width(80)
+          .height(80)
+          .fillColor('#BDBDBD')
           .margin({ top: 100 })
 
         Text('暂无数据')

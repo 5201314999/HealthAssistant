@@ -17,9 +17,18 @@ export struct ProfilePage {
   @State notificationEnabled: boolean = true;
   @State strictReminderEnabled: boolean = false;
   @State joinDate: number = 0;
+  @Watch('onRefreshKeyChanged') @Prop refreshKey: number = 0; // 刷新触发器
 
   async aboutToAppear() {
     await this.loadStatistics();
+  }
+
+  // 监听 refreshKey 变化，触发刷新
+  async onRefreshKeyChanged() {
+    if (this.refreshKey > 0) {
+      hilog.debug(DOMAIN, TAG, 'ProfilePage refreshKey changed, reloading statistics');
+      await this.loadStatistics();
+    }
   }
 
   async loadStatistics() {

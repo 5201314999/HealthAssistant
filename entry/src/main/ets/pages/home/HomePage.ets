@@ -41,8 +41,7 @@ export struct HomePage {
   private indicatorSwiperController: SwiperController = new SwiperController(); // Swiper 控制器
   @State diseaseIndicators: Map<string, IndicatorItem[]> = new Map(); // 存储每个疾病的核心指标
   @State swiperIndex:number=0
-
-  @Watch('onRefreshKeyChanged') @Prop refreshKey: number = 0; // 接收刷新触发器
+  @Watch('onRefreshKeyChanged') @Prop refreshKey: number = 0; // 刷新触发器
 
   async aboutToAppear() {
     console.log('HomePage aboutToAppear')
@@ -50,7 +49,7 @@ export struct HomePage {
     hilog.debug(DOMAIN, TAG, 'HomePage aboutToAppear');
   }
 
-  // 监听 refreshKey 变化，触发刷
+  // 监听 refreshKey 变化，触发刷新
   async onRefreshKeyChanged() {
     if (this.refreshKey > 0) {
       console.log('HomePage refreshKey changed, reloading data');

@@ -13,15 +13,19 @@ export struct MedicineTabPage {
   @State currentTab: number = 0;
   @State medicineList: MedicineData[] = [];
   @State todayRecords: MedicineRecord[] = [];
+  @Watch('onRefreshKeyChanged') @Prop refreshKey: number = 0; // 刷新触发器
 
   async aboutToAppear() {
     hilog.debug(DOMAIN, TAG, 'aboutToAppear');
     await this.loadData();
   }
 
-  onPageShow() {
-    hilog.debug(DOMAIN, TAG, 'onPageShow - reloading data');
-    this.loadData();
+  // 监听 refreshKey 变化，触发刷新
+  async onRefreshKeyChanged() {
+    if (this.refreshKey > 0) {
+      hilog.debug(DOMAIN, TAG, 'MedicineTabPage refreshKey changed, reloading data');
+      await this.loadData();
+    }
   }
 
   async loadData() {
