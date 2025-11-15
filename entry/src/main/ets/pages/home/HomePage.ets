@@ -198,6 +198,13 @@ export struct HomePage {
                 });
               }
             }
+            // 如果没有数据，显示占位符
+            if (indicators.length === 0) {
+              indicators.push(
+                { name: '收缩压', value: '--', unit: defaultUnits['systolic'] },
+                { name: '舒张压', value: '--', unit: defaultUnits['diastolic'] }
+              );
+            }
           }
           // 对于糖尿病，从 glucose 组获取数据
           else if (templateId === 'diabetes') {
@@ -211,6 +218,14 @@ export struct HomePage {
                   unit: defaultUnits['glucose']
                 });
               }
+            }
+            // 如果没有数据，显示占位符
+            if (indicators.length === 0) {
+              indicators.push({
+                name: '血糖',
+                value: '--',
+                unit: defaultUnits['glucose']
+              });
             }
           }
           // 其他疾病：从第一组指标中取前3个
@@ -236,21 +251,28 @@ export struct HomePage {
                   }
                 }
               }
+              
+              // 如果没有数据，显示占位符
+              if (indicators.length === 0) {
+                for (const indicatorDef of firstGroup.indicators.slice(0, 3)) {
+                  indicators.push({
+                    name: indicatorDef.name,
+                    value: '--',
+                    unit: indicatorDef.unit
+                  });
+                }
+              }
             }
           }
           
-          // 如果有指标数据，添加到列表
-          if (indicators.length > 0) {
-            this.healthIndicators.push({
-              diseaseId: templateId,
-              diseaseName: template.name,
-              diseaseColor: template.color,
-              indicators: indicators
-            });
-            hilog.info(DOMAIN, TAG, 'Loaded health indicators for: %{public}s, count: %{public}d', template.name, indicators.length);
-          } else {
-            hilog.warn(DOMAIN, TAG, 'No indicators found for disease: %{public}s', templateId);
-          }
+          // 添加到列表（无论是否有真实数据）
+          this.healthIndicators.push({
+            diseaseId: templateId,
+            diseaseName: template.name,
+            diseaseColor: template.color,
+            indicators: indicators
+          });
+          hilog.info(DOMAIN, TAG, 'Loaded health indicators for: %{public}s, count: %{public}d', template.name, indicators.length);
         } catch (err) {
           const error = err as Error;
           hilog.warn(DOMAIN, TAG, 'Failed to load indicators for %{public}s: %{public}s', templateId, error.message);
@@ -372,7 +394,7 @@ export struct HomePage {
           .width('100%')
 
           // Swiper 健康数据展示
-          if (this.activeTemplates.length > 0) {
+          if (this.healthIndicators.length > 0) {
             Column() {
               Swiper(this.indicatorSwiperController) {
                 ForEach(this.healthIndicators, (item: HealthIndicator) => {
@@ -406,17 +428,24 @@ export struct HomePage {
             }
             .width('100%')
           } else {
-            Column() {
+            Column({ space: 12 }) {
+              Text('📊')
+                .fontSize(48)
+                .margin({ top: 12 })
+
               Text('暂无健康数据')
-                .fontSize(14)
-                .fontColor('#9E9E9E')
-                .width('100%')
-                .textAlign(TextAlign.Center)
+                .fontSize(15)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#757575')
+
+              Text('添加疾病后可查看健康指标')
+                .fontSize(13)
+                .fontColor('#BDBDBD')
             }
             .width('100%')
-            .height(160)
+            .height(180)
             .justifyContent(FlexAlign.Center)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor('#FFFFFF')
             .borderRadius(12)
             .margin({ left: 16, right: 16 })
           }
@@ -446,51 +475,71 @@ export struct HomePage {
         }
         .padding(20)
         .backgroundColor('#eff6ff')
-        .borderRadius(16)
+        .borderRadius(8)
         .margin({ left: 16, right: 16, top: 12 })
 
         // 添加疾病和就诊记录按钮
         Row({ space: 12 }) {
-          Button() {
-            Column({ space: 8 }) {
-              Image($r('app.media.plus'))
-                .width(24)
-                .height(24)
-                .fillColor('#212121')
+          Button({type: ButtonType.Normal}) {
+            Column({ space: 12 }) {
+              Row() {
+                Image($r('app.media.plus'))
+                  .width(28)
+                  .height(28)
+                  .fillColor($r('app.color.primary'))
+              }
+              .width(64)
+              .height(64)
+              .borderRadius(16)
+              .backgroundColor('#E3F2FD')
+              .justifyContent(FlexAlign.Center)
 
               Text('添加疾病')
-                .fontSize(14)
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
                 .fontColor('#212121')
             }
             .alignItems(HorizontalAlign.Center)
+            .padding({ top: 20, bottom: 20 })
           }
-          .height(100)
+          .height(160)
           .layoutWeight(1)
-          .backgroundColor('#F5F5F5')
-          .borderRadius(6)
+          .backgroundColor('#FFFFFF')
+          .borderRadius(16)
+          .shadow({ radius: 8, color: 'rgba(0, 0, 0, 0.08)', offsetX: 0, offsetY: 2 })
           .onClick(() => {
             router.pushUrl({
               url: 'pages/disease/AddDiseasePage'
             });
           })
 
-          Button() {
-            Column({ space: 8 }) {
-              Image($r('app.media.calendar'))
-                .width(24)
-                .height(24)
-                .fillColor('#212121')
+          Button({type: ButtonType.Normal}) {
+            Column({ space: 12 }) {
+              Row() {
+                Image($r('app.media.calendar'))
+                  .width(28)
+                  .height(28)
+                  .fillColor($r('app.color.primary'))
+              }
+              .width(64)
+              .height(64)
+              .borderRadius(16)
+              .backgroundColor('#E3F2FD')
+              .justifyContent(FlexAlign.Center)
 
               Text('添加就诊记录')
-                .fontSize(14)
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
                 .fontColor('#212121')
             }
             .alignItems(HorizontalAlign.Center)
+            .padding({ top: 20, bottom: 20 })
           }
-          .height(100)
+          .height(160)
           .layoutWeight(1)
-          .backgroundColor('#F5F5F5')
-          .borderRadius(6)
+          .backgroundColor('#FFFFFF')
+          .borderRadius(16)
+          .shadow({ radius: 8, color: 'rgba(0, 0, 0, 0.08)', offsetX: 0, offsetY: 2 })
           .onClick(() => {
             router.pushUrl({
               url: 'pages/medical/AddMedicalRecordPage'
