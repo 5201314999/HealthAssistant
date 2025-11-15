@@ -84,7 +84,7 @@ struct DataEntryPage {
       useMilitaryTime: false,
       disappearTextStyle: { color: Color.Gray, font: { size: '16fp', weight: FontWeight.Bold } },
       textStyle: { color: '#182431', font: { size: '18fp', weight: FontWeight.Normal } },
-      selectedTextStyle: { color: this.template?.color || '#4CAF50', font: { size: '20fp', weight: FontWeight.Medium } },
+      selectedTextStyle: { color: this.template?.color || $r('app.color.primary'), font: { size: '20fp', weight: FontWeight.Medium } },
       onDateAccept: (value: Date) => {
         this.checkTime = value.getTime();
       },
@@ -188,7 +188,7 @@ struct DataEntryPage {
                 
                 Text('选择时间')
                   .fontSize(14)
-                  .fontColor(this.template?.color || '#4CAF50')
+                  .fontColor(this.template?.color || $r('app.color.primary'))
                   .onClick(() => {
                     this.showDateTimePicker();
                   })
@@ -276,7 +276,7 @@ struct DataEntryPage {
           .height(48)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .backgroundColor(this.template?.color || '#4CAF50')
+          .backgroundColor(this.template?.color || $r('app.color.primary'))
           .borderRadius(24)
           .onClick(() => {
             this.saveData();
@@ -383,13 +383,13 @@ struct DataEntryPage {
     Text(text)
       .fontSize(14)
       .fontWeight(selected ? FontWeight.Medium : FontWeight.Normal)
-      .fontColor(selected ? '#FFFFFF' : (this.template?.color || '#4CAF50'))
+      .fontColor(selected ? '#FFFFFF' : (this.template?.color || $r('app.color.primary')))
       .padding({ left: 20, right: 20, top: 10, bottom: 10 })
-      .backgroundColor(selected ? (this.template?.color || '#4CAF50') : '#F5F5F5')
+      .backgroundColor(selected ? (this.template?.color || $r('app.color.primary')) : '#F5F5F5')
       .borderRadius(20)
       .border({
         width: 1.5,
-        color: selected ? (this.template?.color || '#4CAF50') : '#E0E0E0'
+        color: selected ? (this.template?.color || $r('app.color.primary')) : '#E0E0E0'
       })
       .onClick(onClick)
   }

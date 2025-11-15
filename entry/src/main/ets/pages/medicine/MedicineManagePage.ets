@@ -133,7 +133,7 @@ struct MedicineManagePage {
               Text(`${this.todayRecords.filter(r => r.taken).length}`)
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#4CAF50')
+                .fontColor($r('app.color.primary'))
               
               Text('已服用')
                 .fontSize(12)
@@ -242,7 +242,7 @@ struct MedicineManagePage {
         if (record.taken && record.takenTime > 0) {
           Text(`已于 ${new Date(record.takenTime).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} 打卡`)
             .fontSize(11)
-            .fontColor('#4CAF50')
+            .fontColor($r('app.color.primary'))
         }
       }
       .alignItems(HorizontalAlign.Start)
@@ -252,7 +252,7 @@ struct MedicineManagePage {
         Image($r('sys.media.ohos_ic_public_ok'))
           .width(24)
           .height(24)
-          .fillColor('#4CAF50')
+          .fillColor($r('app.color.primary'))
       }
     }
     .width('100%')
@@ -329,7 +329,7 @@ struct MedicineManagePage {
         if (medicine.stock > 0) {
           Text(`库存：${medicine.stock}`)
             .fontSize(12)
-            .fontColor(medicine.stock < 10 ? '#F44336' : '#4CAF50')
+            .fontColor(medicine.stock < 10 ? '#F44336' : $r('app.color.primary'))
         }
       }
       .width('100%')

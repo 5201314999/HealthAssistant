@@ -133,6 +133,7 @@ struct AddDiseasePage {
                   template: item,
                   activeIds: this.activeTemplateIds,
                   isAlreadyAdded: this.activeTemplateIds.indexOf(item.id)>=0,
+                  selectedTemplateId: this.selectedTemplateId,
                   onTemplateSelect: (id: string) => {
                     this.selectedTemplateId = id
                   }
@@ -181,6 +182,7 @@ struct DiseaseTemplateCard
   @Param template: DiseaseTemplate|null=null;
   @Param activeIds: string[] =[];
   @Param isAlreadyAdded:boolean = false;
+  @Param selectedTemplateId: string = '';
   @Event onTemplateSelect: (id: string) => void;
 
   build() {
@@ -209,7 +211,7 @@ struct DiseaseTemplateCard
         if (this.isAlreadyAdded) {
           Text('已添加')
             .fontSize(13)
-            .fontColor('#4CAF50')
+            .fontColor($r('app.color.primary'))
         } else {
           Text(this.template!.description || '点击选择此疾病')
             .fontSize(13)
@@ -222,7 +224,7 @@ struct DiseaseTemplateCard
       // 选择状态
       if (!this.isAlreadyAdded) {
         Radio({ value: this.template!.id, group: 'diseaseTemplates' })
-          .checked(false)
+          .checked(this.selectedTemplateId === this.template!.id)
           .onChange((isChecked: boolean) => {
             if (isChecked) {
               this.onTemplateSelect(this.template!.id)
@@ -232,12 +234,12 @@ struct DiseaseTemplateCard
         Image($r('sys.media.ohos_ic_public_ok'))
           .width(24)
           .height(24)
-          .fillColor('#4CAF50')
+          .fillColor($r('app.color.primary'))
       }
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(this.isAlreadyAdded ? '#F5F5F5' : '#FFFFFF')
+    .backgroundColor(this.isAlreadyAdded ? '#F5F5F5' : (this.selectedTemplateId === this.template!.id ? '#E3F2FD' : '#FFFFFF'))
     .borderRadius(12)
     .onClick(() => {
       if (!this.isAlreadyAdded) {

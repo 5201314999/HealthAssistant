@@ -60,33 +60,33 @@ export struct HomePage {
   async loadData() {
     hilog.info(DOMAIN, TAG, 'LoadData start');
     const db = HealthRecordDatabase.getInstance();
-
+    
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
     hilog.info(DOMAIN, TAG, 'Loaded templates count:%{public}d', this.templates.length);
-
+    
     // 获取已激活的疾病模板
     const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
     this.activeTemplates = activeTemplatesFromDB.map((t) => t.templateId);
     hilog.info(DOMAIN, TAG, 'Active templates count:%{public}d', this.activeTemplates.length);
-
+    
     // 计算疾病数量（从激活的疾病模板获取）
     this.diseaseCount = this.activeTemplates.length;
     console.log('this.diseaseCount:', this.diseaseCount)
-
+    
     // 加载每个模板的记录数和核心指标
     this.diseaseIndicators.clear();
     for (const template of this.templates) {
       const count = await db.getRecordCount(template.id);
       this.templateCounts.set(template.id, count);
-
+      
       // 加载该疾病的核心指标（最多3个）
       await this.loadDiseaseIndicators(template, db);
     }
-
+    
     // 加载 Swiper 数据：每个激活疾病的最近诊疗记录指标
     await this.loadHealthIndicators(db);
-
+    
     // 加载最新血压数据
     const latestBP = await db.getLatestHealthRecord('hypertension', 'blood_pressure');
     if (latestBP) {
@@ -95,18 +95,18 @@ export struct HomePage {
       this.latestBloodPressure = { systolic, diastolic };
       hilog.debug(DOMAIN, TAG, 'Latest blood pressure - systolic:%{public}d, diastolic:%{public}d', systolic, diastolic);
     }
-
+    
     // 加载最新血糖数据
     const latestDiabetes = await db.getLatestHealthRecord('diabetes', 'glucose');
     if (latestDiabetes) {
       this.latestGlucose = latestDiabetes.getIndicator('glucose') as number;
       hilog.debug(DOMAIN, TAG, 'Latest glucose:%{public}f', this.latestGlucose as number);
     }
-
+    
     // 加载今日用药记录
     this.todayMedicineRecords = await db.getMedicineRecords(Date.now() - 24 * 60 * 60 * 1000, Date.now());
     hilog.info(DOMAIN, TAG, 'Today medicine records count:%{public}d', this.todayMedicineRecords.length);
-
+    
     // 触发UI更新
     this.templateCounts = new Map(this.templateCounts);
     this.activeTemplates = [...this.activeTemplates];
@@ -118,12 +118,12 @@ export struct HomePage {
   private async loadDiseaseIndicators(template: DiseaseTemplate, db: HealthRecordDatabase): Promise<void> {
     try {
       const indicators: IndicatorItem[] = [];
-
+      
       // 获取该疾病的第一组指标定义（最多前3个）
       if (template.indicatorGroups.length > 0) {
         const firstGroup = template.indicatorGroups[0];
         const indicatorDefs = firstGroup.indicators.slice(0, 3); // 只取前3个指标
-
+        
         // 获取每个指标的最新值
         for (const indicatorDef of indicatorDefs) {
           try {
@@ -145,7 +145,7 @@ export struct HomePage {
           }
         }
       }
-
+      
       if (indicators.length > 0) {
         this.diseaseIndicators.set(template.id, indicators);
         hilog.info(DOMAIN, TAG, 'Loaded %{public}d indicators for disease: %{public}s', indicators.length, template.name);
@@ -159,84 +159,86 @@ export struct HomePage {
   private async loadHealthIndicators(db: HealthRecordDatabase): Promise<void> {
     try {
       this.healthIndicators = [];
-
-      // 默认指标ID映射
-      const defaultIndicators: Record<string, string> = {
-        'hypertension': 'systolic',  // 高血压
-        'diabetes': 'glucose'        // 糖尿病
-      };
-
+      
       // 默认单位
       const defaultUnits: Record<string, string> = {
         'systolic': 'mmHg',
         'diastolic': 'mmHg',
         'glucose': 'mmol/L'
       };
-
+      
       // 为每个激活的疾病加载最近的诊疗记录
       for (const templateId of this.activeTemplates) {
         const template = this.templates.find(t => t.id === templateId);
         if (!template) continue;
-
+        
         try {
-          // 获取该疾病最近的诊疗记录
-          const latestRecord = await db.getLatestHealthRecord(templateId);
-          if (!latestRecord) {
-            hilog.warn(DOMAIN, TAG, 'No health record found for disease: %{public}s', templateId);
-            continue;
-          }
-
           // 提取最多3个默认指标
           const indicators: IndicatorItem[] = [];
-
-          // 对于高血压，显示收缩压和舒张压
+          
+          // 对于高血压，从 blood_pressure 组获取数据
           if (templateId === 'hypertension') {
-            const systolic = latestRecord.getIndicator('systolic');
-            const diastolic = latestRecord.getIndicator('diastolic');
-
-            if (systolic !== undefined) {
-              indicators.push({
-                name: '收缩压',
-                value: systolic,
-                unit: defaultUnits['systolic']
-              });
-            }
-            if (diastolic !== undefined) {
-              indicators.push({
-                name: '舒张压',
-                value: diastolic,
-                unit: defaultUnits['diastolic']
-              });
+            const latestRecord = await db.getLatestHealthRecord(templateId, 'blood_pressure');
+            if (latestRecord) {
+              const systolic = latestRecord.getIndicator('systolic');
+              const diastolic = latestRecord.getIndicator('diastolic');
+              
+              if (systolic !== undefined) {
+                indicators.push({
+                  name: '收缩压',
+                  value: systolic,
+                  unit: defaultUnits['systolic']
+                });
+              }
+              if (diastolic !== undefined) {
+                indicators.push({
+                  name: '舒张压',
+                  value: diastolic,
+                  unit: defaultUnits['diastolic']
+                });
+              }
             }
           }
-          // 对于糖尿病，显示血糖
+          // 对于糖尿病，从 glucose 组获取数据
           else if (templateId === 'diabetes') {
-            const glucose = latestRecord.getIndicator('glucose');
-            if (glucose !== undefined) {
-              indicators.push({
-                name: '血糖',
-                value: glucose,
-                unit: defaultUnits['glucose']
-              });
+            const latestRecord = await db.getLatestHealthRecord(templateId, 'glucose');
+            if (latestRecord) {
+              const glucose = latestRecord.getIndicator('glucose');
+              if (glucose !== undefined) {
+                indicators.push({
+                  name: '血糖',
+                  value: glucose,
+                  unit: defaultUnits['glucose']
+                });
+              }
             }
           }
           // 其他疾病：从第一组指标中取前3个
           else {
             if (template.indicatorGroups.length > 0) {
               const firstGroup = template.indicatorGroups[0];
-              for (const indicatorDef of firstGroup.indicators.slice(0, 3)) {
-                const value = latestRecord.getIndicator(indicatorDef.id);
-                if (value !== undefined) {
-                  indicators.push({
-                    name: indicatorDef.name,
-                    value: value,
-                    unit: indicatorDef.unit
-                  });
+              // 先尝试从第一组获取数据
+              let latestRecord = await db.getLatestHealthRecord(templateId, firstGroup.id);
+              // 如果第一组没有数据，尝试不指定groupId获取任意记录
+              if (!latestRecord) {
+                latestRecord = await db.getLatestHealthRecord(templateId);
+              }
+              
+              if (latestRecord) {
+                for (const indicatorDef of firstGroup.indicators.slice(0, 3)) {
+                  const value = latestRecord.getIndicator(indicatorDef.id);
+                  if (value !== undefined) {
+                    indicators.push({
+                      name: indicatorDef.name,
+                      value: value,
+                      unit: indicatorDef.unit
+                    });
+                  }
                 }
               }
             }
           }
-
+          
           // 如果有指标数据，添加到列表
           if (indicators.length > 0) {
             this.healthIndicators.push({
@@ -245,14 +247,16 @@ export struct HomePage {
               diseaseColor: template.color,
               indicators: indicators
             });
-            hilog.info(DOMAIN, TAG, 'Loaded health indicators for: %{public}s', template.name);
+            hilog.info(DOMAIN, TAG, 'Loaded health indicators for: %{public}s, count: %{public}d', template.name, indicators.length);
+          } else {
+            hilog.warn(DOMAIN, TAG, 'No indicators found for disease: %{public}s', templateId);
           }
         } catch (err) {
           const error = err as Error;
           hilog.warn(DOMAIN, TAG, 'Failed to load indicators for %{public}s: %{public}s', templateId, error.message);
         }
       }
-
+      
       hilog.info(DOMAIN, TAG, 'Loaded %{public}d health indicator sets', this.healthIndicators.length);
     } catch (err) {
       const error = err as Error;
@@ -622,7 +626,7 @@ export struct HomePage {
 
               Text(`${this.getTakenCount()}/${this.todayMedicineRecords.length}`)
                 .fontSize(14)
-                .fontColor('#4CAF50')
+                .fontColor($r('app.color.primary'))
             }
             .width('100%')
 
@@ -632,7 +636,7 @@ export struct HomePage {
               type: ProgressType.Linear
             })
             .width('100%')
-            .color('#4CAF50')
+            .color($r('app.color.primary'))
           }
           .width('100%')
           .padding(16)
@@ -740,7 +744,7 @@ export struct HomePage {
         Image($r('sys.media.ohos_ic_public_ok'))
           .width(24)
           .height(24)
-          .fillColor('#4CAF50')
+          .fillColor($r('app.color.primary'))
       }
     }
     .width('100%')

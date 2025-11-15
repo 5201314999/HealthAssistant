@@ -99,7 +99,11 @@ struct DiseaseManagePage {
           this.loadData();
         })
       } else if (this.template && this.template.indicatorGroups.length === 1) {
-        this.RecordListView(this.template.indicatorGroups[0]);
+        Column() {
+          this.RecordListView(this.template.indicatorGroups[0]);
+        }
+        .layoutWeight(1)
+        .width('100%')
       }
 
       // 底部录入按钮
@@ -167,7 +171,7 @@ struct DiseaseManagePage {
             top: 2,
             bottom: 2
           })
-          .backgroundColor(this.template?.color || '#4CAF50')
+          .backgroundColor(this.template?.color || $r('app.color.primary'))
           .borderRadius(4)
           .margin({ left: 8 })
 
@@ -290,32 +294,71 @@ struct DiseaseManagePage {
 
   @Builder
   BottomButtons() {
-    if (this.template && this.template.indicatorGroups.length === 1) {
-      this.SingleButton();
-    } else if (this.template && this.template.indicatorGroups.length > 1) {
-      this.MultipleButtons();
-    }
-  }
-
-  @Builder
-  SingleButton() {
-    if (!this.template) {
-      // Builder方法不能返回null，使用空组件代替
-      Blank();
-    } else {
-      Row({ space: 12 }) {
-        Button(`录入${this.template!.indicatorGroups[0].name}`)
-          .layoutWeight(1)
-          .backgroundColor(this.template!.color)
-          .onClick(() => {
-            router.pushUrl({
-              url: 'pages/common/DataEntryPage',
-              params: {
-                templateId: this.template?.id,
-                groupId: this.template!.indicatorGroups[0].id
-              }
-            });
-          })
+    if (this.template) {
+      Column({ space: 8 }) {
+        if (this.template.indicatorGroups.length === 1) {
+          Button(`快速录入${this.template.indicatorGroups[0].name}`)
+            .width('100%')
+            .height(48)
+            // .backgroundColor(this.template.color)
+            .backgroundColor($r('app.color.primary'))
+            .onClick(() => {
+              router.pushUrl({
+                url: 'pages/common/DataEntryPage',
+                params: {
+                  templateId: this.template?.id,
+                  groupId: this.template!.indicatorGroups[0].id
+                }
+              });
+            })
+        } else {
+          Row({ space: 8 }) {
+            ForEach(this.template.indicatorGroups, (group: IndicatorGroup, index: number) => {
+              Button(`录入${group.name}`)
+                .layoutWeight(1)
+                .height(48)
+                // .backgroundColor(this.template?.color)
+                .backgroundColor($r('app.color.primary'))
+                .opacity(index === 0 ? 1 : 0.8)
+                .onClick(() => {
+                  router.pushUrl({
+                    url: 'pages/common/DataEntryPage',
+                    params: {
+                      templateId: this.template?.id,
+                      groupId: group.id
+                    }
+                  });
+                })
+            })
+          }
+          .width('100%')
+        }
+        
+        // 添加完整诊疗记录按钮
+        Button() {
+          Row({ space: 8 }) {
+            Image($r('app.media.calendar'))
+              .width(20)
+              .height(20)
+              .fillColor('#FFFFFF')
+            
+            Text('添加诊疗记录')
+              .fontSize(15)
+              .fontColor('#FFFFFF')
+          }
+        }
+        .width('100%')
+        .height(48)
+        .backgroundColor('#FF9800')
+        // .backgroundColor('#FF9800')
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/medical/AddMedicalRecordPage',
+            params: {
+              preSelectedTemplateId: this.template?.id
+            }
+          });
+        })
       }
       .width('100%')
       .padding(16)
@@ -323,31 +366,7 @@ struct DiseaseManagePage {
     }
   }
 
-  @Builder
-  MultipleButtons() {
-    Row({ space: 12 }) {
-      ForEach(this.template?.indicatorGroups, (group: IndicatorGroup, index: number) => {
-        Button(`录入${group.name}`)
-          .layoutWeight(1)
-          .backgroundColor(this.template?.color)
-          .opacity(index === 0 ? 1 : 0.8)
-          .onClick(() => {
-            router.pushUrl({
-              url: 'pages/common/DataEntryPage',
-              params: {
-                templateId: this.template?.id,
-                groupId: group.id
-              }
-            });
-          })
-      })
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor('#FFFFFF')
-  }
-
-  getIndicatorColor(indicator: IndicatorDefinition, value: number): string {
+  getIndicatorColor(indicator: IndicatorDefinition, value: number): string{
     if (!indicator.warningLevels) {
       return '#424242';
     }
@@ -359,7 +378,7 @@ struct DiseaseManagePage {
       if (minOk && maxOk) {
         switch (level.level) {
           case 'normal':
-            return '#4CAF50';
+            return '#3b82f6';
           case 'warning':
             return '#FF9800';
           case 'danger':

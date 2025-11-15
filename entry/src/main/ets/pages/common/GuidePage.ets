@@ -22,7 +22,7 @@ struct GuidePage {
       Button('进入应用')
         .width('80%')
         .height(50)
-        .backgroundColor('#4CAF50')
+        .backgroundColor($r('app.color.primary'))
         .margin({ top: 50 })
         .onClick(() => {
           router.replaceUrl({ url: 'pages/home/Index' });

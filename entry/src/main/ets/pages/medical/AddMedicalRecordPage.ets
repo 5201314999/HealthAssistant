@@ -31,11 +31,27 @@ struct AddMedicalRecordPage {
   @State treatment: string = '';
   @State notes: string = '';
   @State indicators: Record<string, string | number> = {}; // 动态指标
+  private preSelectedTemplateId: string = ''; // 预选的疾病模板ID
 
   async aboutToAppear() {
     hilog.debug(DOMAIN, TAG, 'aboutToAppear start');
+    
+    // 获取路由参数中的预选模板ID
+    const params = router.getParams() as Record<string, Object>;
+    this.preSelectedTemplateId = (params['preSelectedTemplateId'] as string) || '';
+    hilog.debug(DOMAIN, TAG, 'preSelectedTemplateId: %{public}s', this.preSelectedTemplateId);
+    
     // 获取已激活的疾病模板
     await this.loadActiveTemplates();
+    
+    // 如果有预选的模板ID，自动选择它
+    if (this.preSelectedTemplateId) {
+      const preSelectedIndex = this.templates.findIndex(t => t.id === this.preSelectedTemplateId);
+      if (preSelectedIndex >= 0) {
+        this.onTemplateSelected(preSelectedIndex);
+        hilog.debug(DOMAIN, TAG, 'Auto-selected template: %{public}s', this.preSelectedTemplateId);
+      }
+    }
   }
 
   async loadActiveTemplates() {

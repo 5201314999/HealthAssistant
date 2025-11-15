@@ -160,7 +160,7 @@ export struct ProfilePage {
               Text(`${this.medicineCount}`)
                 .fontSize(28)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#4CAF50')
+                .fontColor($r('app.color.primary'))
 
               Text('服用药品')
                 .fontSize(12)

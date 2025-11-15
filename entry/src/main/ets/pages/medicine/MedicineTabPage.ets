@@ -133,7 +133,7 @@ export struct MedicineTabPage {
         Text(`${this.getCompletionRate()}% 完成`)
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#4CAF50')
+          .fontColor($r('app.color.primary'))
       }
       .width('100%')
       .padding(16)
@@ -395,7 +395,7 @@ export struct MedicineTabPage {
         if (record.taken && record.takenTime > 0) {
           Text(`已于 ${new Date(record.takenTime).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} 打卡`)
             .fontSize(11)
-            .fontColor('#4CAF50')
+            .fontColor($r('app.color.primary'))
         }
       }
       .alignItems(HorizontalAlign.Start)
@@ -405,7 +405,7 @@ export struct MedicineTabPage {
         Image($r('sys.media.ohos_ic_public_ok'))
           .width(24)
           .height(24)
-          .fillColor('#4CAF50')
+          .fillColor($r('app.color.primary'))
       }
     }
     .width('100%')
@@ -481,7 +481,7 @@ export struct MedicineTabPage {
         if (medicine.stock > 0) {
           Text(`库存：${medicine.stock}`)
             .fontSize(12)
-            .fontColor(medicine.stock < 10 ? '#F44336' : '#4CAF50')
+            .fontColor(medicine.stock < 10 ? '#F44336' : $r('app.color.primary'))
         }
       }
       .width('100%')

@@ -207,7 +207,7 @@ struct Index {
         .borderRadius(16)
         .linearGradient({
           angle: 135,
-          colors: [[color, 0.0], [this.darkenColor(color), 1.0]]
+          colors: [[color, 0.0], [this.darkenColor(color as string), 1.0]]
         })
         .justifyContent(FlexAlign.Center)
         .shadow({
@@ -278,7 +278,7 @@ struct Index {
   darkenColor(color: string): string {
     // 简单的颜色加深处理
     const colors: Record<string, string> = {
-      '#4CAF50': '#2E7D32',
+      '#3b82f6': '#1E53F5',
       '#2196F3': '#1565C0',
       '#FF9800': '#E65100',
       '#F44336': '#C62828',

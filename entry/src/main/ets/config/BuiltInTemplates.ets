@@ -6,7 +6,7 @@ import { DiseaseTemplate, IndicatorGroup, IndicatorDefinition, IndicatorType } f
 
 // 创建甲亢管理模板
 function createThyroidTemplate(): DiseaseTemplate {
-  const template = new DiseaseTemplate('thyroid', '甲亢管理', '#4CAF50');
+  const template = new DiseaseTemplate('thyroid', '甲亢管理', '#3b82f6');
   template.description = '记录甲状腺功能指标';
   template.icon = 'sys.media.ohos_ic_public_health';
   
