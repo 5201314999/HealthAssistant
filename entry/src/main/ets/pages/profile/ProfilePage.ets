@@ -34,16 +34,9 @@ export struct ProfilePage {
   async loadStatistics() {
     const db = HealthRecordDatabase.getInstance();
     
-    // 获取有数据的疾病数量
-    let diseaseCount = 0;
-    const templates = BuiltInTemplates.getAllTemplates();
-    for (const template of templates) {
-      const count = await db.getRecordCount(template.id);
-      if (count > 0) {
-        diseaseCount++;
-      }
-    }
-    this.diseaseCount = diseaseCount;
+    // 获取已激活的疾病模板数量（与首页逻辑一致）
+    const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
+    this.diseaseCount = activeTemplatesFromDB.length;
     
     const medicineList = await db.getMedicineList();
     this.medicineCount = medicineList.length;

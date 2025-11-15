@@ -57,19 +57,18 @@ export struct MedicineTabPage {
   }
 
   @Builder
-  TabBarItem(title: string, active: boolean) {
+  TabBarItem(title: string, index: number) {
     Column() {
       Text(title)
         .fontSize(16)
-        .fontWeight(active ? FontWeight.Medium : FontWeight.Normal)
-        .fontColor(active ? $r('app.color.primary') : '#757575')
-      if (active) {
-        Divider()
-          .strokeWidth(3)
-          .color($r('app.color.primary'))
-          .width(60)
-          .margin({ top: 8 })
-      }
+        .fontWeight(this.currentTab === index ? FontWeight.Medium : FontWeight.Normal)
+        .fontColor(this.currentTab === index ? $r('app.color.primary') : '#757575')
+      
+      Divider()
+        .strokeWidth(3)
+        .color(this.currentTab === index ? $r('app.color.primary') : Color.Transparent)
+        .width(60)
+        .margin({ top: 8 })
     }
     .height(48)
     .justifyContent(FlexAlign.Center)
@@ -95,12 +94,12 @@ export struct MedicineTabPage {
         TabContent() {
           this.MedicineReminderContent()
         }
-        .tabBar(this.TabBarItem('用药提醒', this.currentTab === 0))
+        .tabBar(this.TabBarItem('用药提醒', 0))
 
         TabContent() {
           this.MyMedicineContent()
         }
-        .tabBar(this.TabBarItem('我的用药', this.currentTab === 1))
+        .tabBar(this.TabBarItem('我的用药', 1))
       }
       .barMode(BarMode.Fixed)
       .onChange((index: number) => {
