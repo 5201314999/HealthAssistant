@@ -15,40 +15,23 @@ struct MedicalRecordsPage {
   @State templateMap: Map<string, DiseaseTemplate> = new Map();
 
   async aboutToAppear() {
-    // 加载所有模板
-    const templates = BuiltInTemplates.getAllTemplates();
-    templates.forEach(template => {
-      this.templateMap.set(template.id, template);
-    });
-    
-    // 获取活跃的疾病模板（有数据的模板）
-    const db = HealthRecordDatabase.getInstance();
-    const allTemplates = BuiltInTemplates.getAllTemplates();
-    const activeTemplateIds: string[] = [];
-    
-    for (const template of allTemplates) {
-      const count = await db.getRecordCount(template.id);
-      if (count > 0) {
-        activeTemplateIds.push(template.id);
-      }
-    }
-    
-    // 获取所有模板的就诊记录
-    let allRecords: HealthRecord[] = [];
-    for (const templateId of activeTemplateIds) {
-      const records = await db.getHealthRecords(templateId, 'medical_record');
-      allRecords = allRecords.concat(records);
-    }
-    
-    // 按日期降序排序
-    allRecords.sort((a, b) => b.date - a.date);
-    
-    this.records = allRecords;
-    this.isLoading = false;
+    await this.loadAllMedicalRecords();
+  }
+
+  // 页面显示时重新加载数据
+  async onPageShow() {
+    await this.loadAllMedicalRecords();
   }
 
   async loadAllMedicalRecords() {
     this.isLoading = true;
+    
+    // 加载所有模板映射
+    const templates = BuiltInTemplates.getAllTemplates();
+    this.templateMap.clear();
+    templates.forEach(template => {
+      this.templateMap.set(template.id, template);
+    });
     
     // 获取活跃的疾病模板（有数据的模板）
     const db = HealthRecordDatabase.getInstance();
@@ -146,7 +129,10 @@ struct MedicalRecordsPage {
             .margin({ top: 24 })
             .onClick(() => {
               router.pushUrl({
-                url: 'pages/medical/AddMedicalRecordPage'
+                url: 'pages/medical/AddMedicalRecordPage',
+                params: {
+                  timestamp: Date.now() // 添加时间戳强制刷新
+                }
               });
             })
         }

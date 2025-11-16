@@ -14,7 +14,6 @@ const DOMAIN = 0x0000;
 
 interface TemplateShow {
   value: string;
-  text: string;
 }
 
 @Entry
@@ -32,10 +31,34 @@ struct AddMedicalRecordPage {
   @State notes: string = '';
   @State indicators: Record<string, string | number> = {}; // 动态指标
   @State isLoadingTemplates: boolean = false; // 加载状态
+  @State lastLoadTime: number = 0; // 上次加载时间，用于防止重复加载
   private preSelectedTemplateId: string = ''; // 预选的疾病模板ID
 
   async aboutToAppear() {
-    hilog.debug(DOMAIN, TAG, 'add medical aboutToAppear start');
+    hilog.debug(DOMAIN, TAG, 'aboutToAppear called');
+    await this.initializePage();
+  }
+
+  // 页面每次显示时都重新加载数据
+  async onPageShow() {
+    hilog.debug(DOMAIN, TAG, 'onPageShow called');
+    
+    // 防止短时间内重复加载（500ms内）
+    const now = Date.now();
+    if (now - this.lastLoadTime < 500) {
+      hilog.debug(DOMAIN, TAG, 'Skip loading: too soon after last load');
+      return;
+    }
+    
+    await this.initializePage();
+  }
+
+  // 初始化页面数据
+  async initializePage() {
+    hilog.debug(DOMAIN, TAG, 'initializePage start');
+    
+    // 更新加载时间
+    this.lastLoadTime = Date.now();
     
     // 获取路由参数中的预选模板ID
     const params = router.getParams() as Record<string, Object>;
@@ -46,8 +69,9 @@ struct AddMedicalRecordPage {
     this.isLoadingTemplates = true;
     try {
       await this.loadActiveTemplates();
+      hilog.info(DOMAIN, TAG, 'Templates loaded: %{public}d', this.templates.length);
     } catch (err) {
-      hilog.error(DOMAIN, TAG, 'Error in aboutToAppear: %{public}s', JSON.stringify(err));
+      hilog.error(DOMAIN, TAG, 'Error loading templates: %{public}s', JSON.stringify(err));
     } finally {
       this.isLoadingTemplates = false;
     }
@@ -59,7 +83,13 @@ struct AddMedicalRecordPage {
         this.onTemplateSelected(preSelectedIndex);
         hilog.debug(DOMAIN, TAG, 'Auto-selected template: %{public}s', this.preSelectedTemplateId);
       }
+    } else if (this.templates.length > 0) {
+      // 如果没有预选模板，但有可用模板，自动选择第一个
+      this.onTemplateSelected(0);
+      hilog.debug(DOMAIN, TAG, 'Auto-selected first template: %{public}s', this.templates[0].name);
     }
+    
+    hilog.debug(DOMAIN, TAG, 'initializePage end');
   }
 
   async loadActiveTemplates() {
@@ -232,7 +262,7 @@ struct AddMedicalRecordPage {
                 .backgroundColor('#F5F5F5')
                 .borderRadius(8)
               } else if (this.templates.length > 0) {
-                Select(this.templates.map(t => ({ value: t.id, text: t.name } as TemplateShow)))
+                Select(this.templates.map(t => ({ value: t.name } as TemplateShow)))
                   .selected(this.selectedIndex >= 0 && this.selectedIndex < this.templates.length ? this.selectedIndex : 0)
                   .value(this.getSelectedTemplateName())
                   .width('100%')
@@ -304,7 +334,7 @@ struct AddMedicalRecordPage {
                           this.indicators[indicator.id] = value;
                         })
                     } else if (indicator.type === IndicatorType.SELECT && indicator.options) {
-                      Select(indicator.options.map(opt => ({ value: opt.value, text: opt.label } as TemplateShow)))
+                      Select(indicator.options.map(opt => ({ value: opt.label } as TemplateShow)))
                         .value(String(this.indicators[indicator.id] || ''))
                         .font({ size: 14 })
                         .backgroundColor('#F5F5F5')
