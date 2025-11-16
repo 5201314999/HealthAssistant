@@ -1,9 +1,10 @@
 import router from '@ohos.router';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
 import { MedicineData, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
-import { NotificationManager } from '../../utils/NotificationManager';
+import { NotificationManager, RemainState } from '../../utils/NotificationManager';
 import common from '@ohos.app.ability.common';
 
 const TAG = 'AddMedicinePage';
@@ -22,6 +23,13 @@ interface QuickTimeOption {
   hour: number;
   minute: number;
   label: string;
+}
+
+// 提醒创建结果接口
+interface ReminderCreationResult {
+  success: number;
+  failed: number;
+  permissionDenied: boolean;
 }
 
 @Entry
@@ -86,9 +94,23 @@ struct AddMedicinePage {
     await HealthRecordDatabase.getInstance().generateTodayMedicineRecords();
     
     // 创建用药提醒通知
-    await this.createMedicineReminders(medicine);
+    const reminderResult = await this.createMedicineReminders(medicine);
     
-    promptAction.showToast({ message: '保存成功，已设置用药提醒' });
+    // 根据提醒创建结果显示不同的消息
+    let message = '药品保存成功';
+    if (reminderResult.permissionDenied) {
+      message += '，但提醒创建失败。请在系统设置中开启通知权限';
+      promptAction.showToast({ message: message, duration: 3000 });
+    } else if (reminderResult.success > 0 && reminderResult.failed === 0) {
+      message += '，已设置用药提醒';
+      promptAction.showToast({ message: message });
+    } else if (reminderResult.success > 0 && reminderResult.failed > 0) {
+      message += `，已为 ${reminderResult.success} 个时间设置提醒`;
+      promptAction.showToast({ message: message });
+    } else {
+      promptAction.showToast({ message: message });
+    }
+    
     router.back();
   }
 
@@ -159,24 +181,39 @@ struct AddMedicinePage {
   }
 
   // 创建用药提醒
-  async createMedicineReminders(medicine: MedicineData) {
+  async createMedicineReminders(medicine: MedicineData): Promise<ReminderCreationResult> {
     const notificationMgr = NotificationManager.getInstance();
     
-    // 检查当前提醒数量
-    const stats = await notificationMgr.getReminderStats();
-    hilog.info(DOMAIN, TAG, 'Current reminder stats: %{public}d/%{public}d', stats.current, stats.max);
-    
-    // 如果剩余提醒数不足以创建新提醒
-    if (stats.remaining < this.customTimes.length) {
-      hilog.warn(DOMAIN, TAG, 'Not enough reminder slots. Required: %{public}d, Remaining: %{public}d', 
-        this.customTimes.length, stats.remaining);
-      promptAction.showToast({ 
-        message: `提醒数量已达上限，仅为部分时间设置提醒` 
-      });
-    }
-
     let successCount = 0;
     let failCount = 0;
+    let permissionDenied = false;
+    
+    // 检查当前提醒数量
+    let stats: RemainState | null = null;
+    try {
+      stats = await notificationMgr.getReminderStats();
+      hilog.info(DOMAIN, TAG, 'Current reminder stats: %{public}d/%{public}d', stats.current, stats.max);
+    } catch (err) {
+      const error = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'Get reminder stats failed: code:%{public}d', error.code);
+      
+      // 如果是通知权限未开启（1700001）
+      if (error.code === 1700001) {
+        permissionDenied = true;
+        const result: ReminderCreationResult = {
+          success: 0,
+          failed: this.customTimes.length,
+          permissionDenied: true
+        };
+        return result;
+      }
+    }
+    
+    // 如果剩余提醒数不足以创建新提醒
+    if (stats && stats.remaining < this.customTimes.length) {
+      hilog.warn(DOMAIN, TAG, 'Not enough reminder slots. Required: %{public}d, Remaining: %{public}d', 
+        this.customTimes.length, stats.remaining);
+    }
 
     // 为每个服用时间创建提醒
     for (let i = 0; i < this.customTimes.length; i++) {
@@ -201,13 +238,13 @@ struct AddMedicinePage {
       }
     }
     
-    // 显示提醒创建结果
-    if (failCount > 0) {
-      hilog.warn(DOMAIN, TAG, 'Reminder creation: %{public}d succeeded, %{public}d failed', successCount, failCount);
-      promptAction.showToast({ 
-        message: `已为 ${successCount} 个时间设置提醒，${failCount} 个失败（提醒数达上限）` 
-      });
-    }
+    hilog.info(DOMAIN, TAG, 'Reminder creation complete: %{public}d succeeded, %{public}d failed', successCount, failCount);
+    const result: ReminderCreationResult = {
+      success: successCount,
+      failed: failCount,
+      permissionDenied: permissionDenied
+    };
+    return result;
   }
 
   // 显示开始日期选择器

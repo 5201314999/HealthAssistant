@@ -19,7 +19,15 @@ struct MedicineManagePage {
 
   async loadData() {
     this.medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
-    this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
+    
+    // 获取今天的日期范围（从今天00:00:00到23:59:59）
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
+    
+    this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(todayStart, todayEnd);
+    console.log(`Data loaded: ${this.medicineList.length} medicines, ${this.todayRecords.length} today records`);
   }
 
   onPageShow() {

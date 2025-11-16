@@ -40,7 +40,11 @@ struct Index {
 
     // 加载用药数据
     const medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
-    const todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
+    const todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(todayStart, todayEnd);
 
     this.medicineCount = medicineList.length;
     this.todayMedicineCount = todayRecords.filter(r => !r.taken).length;

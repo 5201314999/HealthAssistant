@@ -826,11 +826,17 @@ export class HealthRecordDatabase {
 
       // 获取所有药品
       const medicines = await this.getMedicineList();
+      console.info(`[HealthRecordDatabase] 生成今日记录: 找到 ${medicines.length} 个药品`);
 
+      let generatedCount = 0;
       // 为每个药品生成今日记录
       for (const medicine of medicines) {
+        console.info(`[HealthRecordDatabase] 药品: ${medicine.name}, 开始日期: ${medicine.startDate}, 结束日期: ${medicine.endDate}, 今天: ${todayTimestamp}`);
+        console.info(`[HealthRecordDatabase] 频率数组: ${JSON.stringify(medicine.frequency)}, 提醒时间: ${JSON.stringify(medicine.reminderTimes)}`);
+        
         // 检查药品是否在有效期内
         if (medicine.startDate <= todayTimestamp && todayTimestamp < medicine.endDate) {
+          console.info(`[HealthRecordDatabase] 药品 ${medicine.name} 在有效期内，准备生成记录`);
           // 为每个服用时间创建记录
           for (const timeSlot of medicine.frequency) {
             const recordId = medicine.id + '_' + todayTimestamp + '_' + timeSlot;
@@ -840,7 +846,7 @@ export class HealthRecordDatabase {
             predicates.equalTo('id', recordId);
             const resultSet = await this.rdbStore!.query(predicates);
             
-            if (resultSet.rowCount=== 0) {
+            if (resultSet.rowCount === 0) {
               // 创建新记录
               const record = new MedicineRecord(medicine.id, medicine.name, timeSlot);
               record.id = recordId;
@@ -848,13 +854,19 @@ export class HealthRecordDatabase {
               record.reminderTimes = medicine.reminderTimes; // 传递提醒时间信息
               
               await this.saveMedicineRecord(record);
+              generatedCount++;
+              console.info(`[HealthRecordDatabase] 已创建记录: ${recordId}`);
+            } else {
+              console.info(`[HealthRecordDatabase] 记录已存在: ${recordId}`);
             }
             resultSet.close();
           }
+        } else {
+          console.warn(`[HealthRecordDatabase] 药品 ${medicine.name} 不在有效期内`);
         }
       }
 
-      console.info('[HealthRecordDatabase] 今日用药记录已生成');
+      console.info(`[HealthRecordDatabase] 今日用药记录已生成，共 ${generatedCount} 条`);
     } catch (err) {
       console.error('[HealthRecordDatabase] 生成今日用药记录失败:', JSON.stringify(err));
       // 不抛出异常，避免影响主流程

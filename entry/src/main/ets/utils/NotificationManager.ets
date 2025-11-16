@@ -9,7 +9,7 @@ const MAX_REMINDERS_LIMIT = 30;  // 系统允许的最大提醒数
 const KEEP_REMINDERS_COUNT = 15;  // 清理时保留的提醒数
 
 
-interface RemainState{ current: number; max: number; remaining: number }
+export interface RemainState{ current: number; max: number; remaining: number }
 
 /**
  * 通知管理器

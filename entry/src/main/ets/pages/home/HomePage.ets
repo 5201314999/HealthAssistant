@@ -103,8 +103,12 @@ export struct HomePage {
       hilog.debug(DOMAIN, TAG, 'Latest glucose:%{public}f', this.latestGlucose as number);
     }
     
-    // 加载今日用药记录
-    this.todayMedicineRecords = await db.getMedicineRecords(Date.now() - 24 * 60 * 60 * 1000, Date.now());
+    // 加载今日用药记录（今天00:00:00到23:59:59）
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
+    this.todayMedicineRecords = await db.getMedicineRecords(todayStart, todayEnd);
     hilog.info(DOMAIN, TAG, 'Today medicine records count:%{public}d', this.todayMedicineRecords.length);
     
     // 触发UI更新
