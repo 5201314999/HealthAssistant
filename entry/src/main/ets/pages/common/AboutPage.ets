@@ -183,38 +183,38 @@ export struct AboutPage {
               .width('100%')
 
             // 用户协议
-            Row() {
-              Text('用户协议')
-                .fontSize(15)
-                .fontColor('#212121')
-                .layoutWeight(1)
-
-              Image($r('sys.media.ohos_ic_public_arrow_right'))
-                .width(20)
-                .height(20)
-                .fillColor('#BDBDBD')
-            }
-            .width('100%')
-            .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-            .backgroundColor('#FFFFFF')
-            .borderRadius(12)
-
-            // 隐私政策
-            Row() {
-              Text('隐私政策')
-                .fontSize(15)
-                .fontColor('#212121')
-                .layoutWeight(1)
-
-              Image($r('sys.media.ohos_ic_public_arrow_right'))
-                .width(20)
-                .height(20)
-                .fillColor('#BDBDBD')
-            }
-            .width('100%')
-            .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-            .backgroundColor('#FFFFFF')
-            .borderRadius(12)
+            // Row() {
+            //   Text('用户协议')
+            //     .fontSize(15)
+            //     .fontColor('#212121')
+            //     .layoutWeight(1)
+            //
+            //   Image($r('sys.media.ohos_ic_public_arrow_right'))
+            //     .width(20)
+            //     .height(20)
+            //     .fillColor('#BDBDBD')
+            // }
+            // .width('100%')
+            // .padding({ left: 12, right: 12, top: 12, bottom: 12 })
+            // .backgroundColor('#FFFFFF')
+            // .borderRadius(12)
+            //
+            // // 隐私政策
+            // Row() {
+            //   Text('隐私政策')
+            //     .fontSize(15)
+            //     .fontColor('#212121')
+            //     .layoutWeight(1)
+            //
+            //   Image($r('sys.media.ohos_ic_public_arrow_right'))
+            //     .width(20)
+            //     .height(20)
+            //     .fillColor('#BDBDBD')
+            // }
+            // .width('100%')
+            // .padding({ left: 12, right: 12, top: 12, bottom: 12 })
+            // .backgroundColor('#FFFFFF')
+            // .borderRadius(12)
           }
           .width('100%')
           .padding({ left: 16, right: 16, bottom: 40 })

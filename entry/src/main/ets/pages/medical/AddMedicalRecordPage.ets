@@ -31,10 +31,11 @@ struct AddMedicalRecordPage {
   @State treatment: string = '';
   @State notes: string = '';
   @State indicators: Record<string, string | number> = {}; // 动态指标
+  @State isLoadingTemplates: boolean = false; // 加载状态
   private preSelectedTemplateId: string = ''; // 预选的疾病模板ID
 
   async aboutToAppear() {
-    hilog.debug(DOMAIN, TAG, 'aboutToAppear start');
+    hilog.debug(DOMAIN, TAG, 'add medical aboutToAppear start');
     
     // 获取路由参数中的预选模板ID
     const params = router.getParams() as Record<string, Object>;
@@ -42,10 +43,17 @@ struct AddMedicalRecordPage {
     hilog.debug(DOMAIN, TAG, 'preSelectedTemplateId: %{public}s', this.preSelectedTemplateId);
     
     // 获取已激活的疾病模板
-    await this.loadActiveTemplates();
+    this.isLoadingTemplates = true;
+    try {
+      await this.loadActiveTemplates();
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Error in aboutToAppear: %{public}s', JSON.stringify(err));
+    } finally {
+      this.isLoadingTemplates = false;
+    }
     
     // 如果有预选的模板ID，自动选择它
-    if (this.preSelectedTemplateId) {
+    if (this.preSelectedTemplateId && this.templates.length > 0) {
       const preSelectedIndex = this.templates.findIndex(t => t.id === this.preSelectedTemplateId);
       if (preSelectedIndex >= 0) {
         this.onTemplateSelected(preSelectedIndex);
@@ -57,18 +65,37 @@ struct AddMedicalRecordPage {
   async loadActiveTemplates() {
     const db = HealthRecordDatabase.getInstance();
     try {
+      hilog.debug(DOMAIN, TAG, 'Starting to load active templates');
       const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();
+      hilog.info(DOMAIN, TAG, 'Active templates from DB count:%{public}d', activeTemplatesFromDB.length);
+      
       this.templates = [];
       
       for (const active of activeTemplatesFromDB) {
+        hilog.debug(DOMAIN, TAG, 'Processing templateId: %{public}s', active.templateId);
         const template = BuiltInTemplates.getTemplateById(active.templateId);
         if (template) {
           this.templates.push(template);
+          hilog.debug(DOMAIN, TAG, 'Found template: %{public}s', template.name);
+        } else {
+          hilog.warn(DOMAIN, TAG, 'Template not found for ID: %{public}s', active.templateId);
         }
       }
       hilog.info(DOMAIN, TAG, 'Loaded active templates count:%{public}d', this.templates.length);
+      
+      // 如果加载失败，记录所有可用的模板ID
+      if (this.templates.length === 0 && activeTemplatesFromDB.length > 0) {
+        const allTemplates = BuiltInTemplates.getAllTemplates();
+        const allTemplateIds = allTemplates.map(t => t.id);
+        hilog.warn(DOMAIN, TAG, 'No templates loaded. Available template IDs: %{public}s', JSON.stringify(allTemplateIds));
+        hilog.warn(DOMAIN, TAG, 'Active template IDs from DB: %{public}s', JSON.stringify(activeTemplatesFromDB.map(t => t.templateId)));
+      }
+      
+      hilog.debug(DOMAIN, TAG, 'Finished loading active templates');
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'Failed to load active templates: %{public}s', JSON.stringify(err));
+      this.templates = []; // 确保即使出错也设置为空数组
+      throw  new Error(err); // 重新抛出异常，让调用者知道出错了
     }
   }
 
@@ -193,9 +220,20 @@ struct AddMedicalRecordPage {
               }
               .width('100%')
               
-              if (this.templates.length > 0) {
+              if (this.isLoadingTemplates) {
+                Row() {
+                  Text('加载中...')
+                    .fontSize(14)
+                    .fontColor('#757575')
+                }
+                .width('100%')
+                .height(48)
+                .justifyContent(FlexAlign.Center)
+                .backgroundColor('#F5F5F5')
+                .borderRadius(8)
+              } else if (this.templates.length > 0) {
                 Select(this.templates.map(t => ({ value: t.id, text: t.name } as TemplateShow)))
-                  .selected(this.selectedIndex)
+                  .selected(this.selectedIndex >= 0 && this.selectedIndex < this.templates.length ? this.selectedIndex : 0)
                   .value(this.getSelectedTemplateName())
                   .width('100%')
                   .font({ size: 16 })
@@ -203,13 +241,20 @@ struct AddMedicalRecordPage {
                   .borderRadius(8)
                   .optionWidth(OptionWidthMode.FIT_TRIGGER)
                   .onSelect((index: number) => {
-                    this.onTemplateSelected(index);
+                    if (index >= 0 && index < this.templates.length) {
+                      this.onTemplateSelected(index);
+                    }
                   })
               } else {
                 Text('暂无激活疾病，请先在首页添加疾病')
                   .fontSize(14)
                   .fontColor('#F44336')
                   .fontWeight(FontWeight.Medium)
+                  .width('100%')
+                  .height(48)
+                  .textAlign(TextAlign.Center)
+                  .backgroundColor('#F5F5F5')
+                  .borderRadius(8)
               }
             }
             .width('100%')

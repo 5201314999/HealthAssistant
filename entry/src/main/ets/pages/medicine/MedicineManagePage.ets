@@ -78,7 +78,7 @@ struct MedicineManagePage {
         Row() {
           Button('添加药品')
             .width('100%')
-            .backgroundColor('#FF9800')
+            .backgroundColor($r('app.color.primary'))
             .onClick(() => {
               router.pushUrl({ url: 'pages/medicine/AddMedicinePage' });
             })

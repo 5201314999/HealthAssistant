@@ -445,6 +445,7 @@ struct AddMedicinePage {
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .borderRadius(24)
+          .backgroundColor($r('app.color.primary'))
           .onClick(() => {
             this.saveData();
           })

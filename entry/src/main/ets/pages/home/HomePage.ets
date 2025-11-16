@@ -429,9 +429,9 @@ export struct HomePage {
             .width('100%')
           } else {
             Column({ space: 12 }) {
-              Text('📊')
-                .fontSize(48)
-                .margin({ top: 12 })
+              Image($r('app.media.no_data'))
+              .width(48)
+              .height(48)
 
               Text('暂无健康数据')
                 .fontSize(15)
@@ -483,10 +483,14 @@ export struct HomePage {
           Button({type: ButtonType.Normal}) {
             Column({ space: 12 }) {
               Row() {
-                Image($r('app.media.plus'))
-                  .width(28)
-                  .height(28)
-                  .fillColor($r('app.color.primary'))
+                // Image($r('app.media.plus'))
+                //   .width(28)
+                //   .height(28)
+                //   .fillColor($r('app.color.primary'))
+
+                Text('󰀵')
+                .fontSize(28)
+                .fontColor($r('app.color.primary'))
               }
               .width(64)
               .height(64)
