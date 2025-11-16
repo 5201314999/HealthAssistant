@@ -1,8 +1,9 @@
 import router from '@ohos.router';
 import { HealthRecordDatabase } from '../../utils/HealthRecordDatabase';
-import { MedicineData, MedicineRecord } from '../../models/MedicineData';
+import { MedicineData, MedicineRecord, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager } from '../../utils/NotificationManager';
+
 
 @Entry
 @Component
@@ -12,6 +13,7 @@ struct MedicineManagePage {
   @State todayRecords: MedicineRecord[] = [];
 
   async aboutToAppear() {
+    console.log('MedicineManagePage aboutToAppear');
     await this.loadData();
   }
 
@@ -21,6 +23,7 @@ struct MedicineManagePage {
   }
 
   onPageShow() {
+    console.log('MedicineManagePage onPageShow');
     this.loadData();
   }
 
@@ -235,7 +238,7 @@ struct MedicineManagePage {
           .fontColor('#1F1F1F')
           .decoration({ type: record.taken ? TextDecorationType.LineThrough : TextDecorationType.None })
         
-        Text(this.getTimeName(record.time))
+        Text(this.getTimeName(record.time, record.reminderTimes))
           .fontSize(12)
           .fontColor('#757575')
         
@@ -305,17 +308,9 @@ struct MedicineManagePage {
           .fontColor('#757575')
         
         Text(medicine.frequency.map((f: string) => {
-          const timeName = this.getTimeName(f);
-          const reminderTime = medicine.reminderTimes[f];
-          if (reminderTime) {
-            const hour = String(reminderTime.hour).padStart(2, '0');
-            const minute = String(reminderTime.minute).padStart(2, '0');
-            return `${timeName}(${hour}:${minute})`;
-          }
-          return timeName;
-        }).join('、'))
+          return this.getTimeName(f, medicine.reminderTimes);
+        }).filter(t => t).join('、'))
           .fontSize(12)
-          .fontColor($r('app.color.primary'))
           .fontColor($r('app.color.primary'))
       }
       .width('100%')
@@ -347,7 +342,14 @@ struct MedicineManagePage {
     .borderRadius(12)
   }
   
-  getTimeName(time: string): string {
+  getTimeName(time: string, reminderTimes?: Record<string, RemindTime>): string {
+    // 优先使用时间显示
+    if (reminderTimes && reminderTimes[time]) {
+      const t = reminderTimes[time];
+      return `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`;
+    }
+    
+    // 兼容旧的时间格式
     switch (time) {
       case 'morning':
         return '早上';
@@ -358,7 +360,8 @@ struct MedicineManagePage {
       case 'bedtime':
         return '睡前';
       default:
-        return time;
+        // 对于新格式 time_0, time_1 等，直接返回空字符串，让上面的reminderTimes处理
+        return time.startsWith('time_') ? '' : time;
     }
   }
 

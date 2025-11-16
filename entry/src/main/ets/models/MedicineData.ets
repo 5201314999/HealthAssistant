@@ -79,12 +79,13 @@ export class MedicineRecord {
   medicineId: string = '';
   medicineName: string = '';
   date: number = 0;
-  time: 'morning' | 'noon' | 'evening' | 'bedtime' = 'morning';
+  time: string = 'morning'; // 改为 string 类型以支持自定义时间格式
   taken: boolean = false; // 是否已服用
   takenTime: number = 0; // 实际服用时间
   note: string = '';
+  reminderTimes: Record<string, RemindTime> = {}; // 添加提醒时间信息
   
-  constructor(medicineId: string, medicineName: string, timeSlot: 'morning' | 'noon' | 'evening' | 'bedtime') {
+  constructor(medicineId: string, medicineName: string, timeSlot: string) {
     this.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
     this.medicineId = medicineId;
     this.medicineName = medicineName;

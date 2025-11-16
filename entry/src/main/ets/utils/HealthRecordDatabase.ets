@@ -8,7 +8,7 @@ import { MedicineData, MedicineRecord, RemindTime } from '../models/MedicineData
 import { ErrorUtils } from './ErrorUtil'
 
 const DB_NAME = 'medical_assistant.db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const TAG = 'HealthRecordDatabase';
 const DOMAIN = 0x0000;
 
@@ -86,6 +86,7 @@ export class DatabaseSchema {
       taken INTEGER DEFAULT 0,
       taken_time INTEGER,
       note TEXT,
+      reminder_times TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )
@@ -265,6 +266,19 @@ export class HealthRecordDatabase {
           // 版本1: 创建基础表结构
           await this._createTables(store);
           console.info('[HealthRecordDatabase] 升级到版本1成功');
+          break;
+        case 2:
+          // 版本2: 添加 reminder_times 列到 medicine_records 表
+          try {
+            await store.executeSql(`
+              ALTER TABLE ${DatabaseSchema.MEDICINE_RECORDS_TABLE} 
+              ADD COLUMN reminder_times TEXT
+            `);
+            console.info('[HealthRecordDatabase] 升级到版本2成功：添加 reminder_times 列');
+          } catch (err) {
+            // 如果列已存在会报错，忽略这个错误
+            console.warn('[HealthRecordDatabase] reminder_times 列可能已存在:', JSON.stringify(err));
+          }
           break;
         // 后续版本升级可在此添加
         default:
@@ -639,6 +653,7 @@ export class HealthRecordDatabase {
         taken: record.taken ? 1 : 0,
         taken_time: record.takenTime,
         note: record.note,
+        reminder_times: JSON.stringify(record.reminderTimes || {}),
         created_at: Date.now(),
         updated_at: Date.now()
       };
@@ -771,7 +786,7 @@ export class HealthRecordDatabase {
     try {
       const medicineId = resultSet.getString(resultSet.getColumnIndex('medicine_id'));
       const medicineName = resultSet.getString(resultSet.getColumnIndex('medicine_name'));
-      const time = resultSet.getString(resultSet.getColumnIndex('time')) as 'morning' | 'noon' | 'evening' | 'bedtime';
+      const time = resultSet.getString(resultSet.getColumnIndex('time'));
       const record = new MedicineRecord(medicineId, medicineName, time);
 
       record.id = resultSet.getString(resultSet.getColumnIndex('id'));
@@ -779,6 +794,16 @@ export class HealthRecordDatabase {
       record.taken = resultSet.getLong(resultSet.getColumnIndex('taken')) === 1;
       record.takenTime = resultSet.getLong(resultSet.getColumnIndex('taken_time'));
       record.note = resultSet.getString(resultSet.getColumnIndex('note'));
+      
+      // 读取并解析 reminder_times
+      const reminderTimesStr = resultSet.getString(resultSet.getColumnIndex('reminder_times'));
+      if (reminderTimesStr) {
+        try {
+          record.reminderTimes = JSON.parse(reminderTimesStr);
+        } catch (e) {
+          record.reminderTimes = {};
+        }
+      }
       
       hilog.debug(DOMAIN, TAG, 'Mapped medicine record: %{public}s', record.id);
       return record;
@@ -817,9 +842,10 @@ export class HealthRecordDatabase {
             
             if (resultSet.rowCount=== 0) {
               // 创建新记录
-              const record = new MedicineRecord(medicine.id, medicine.name, timeSlot as 'morning' | 'noon' | 'evening' | 'bedtime');
+              const record = new MedicineRecord(medicine.id, medicine.name, timeSlot);
               record.id = recordId;
               record.date = todayTimestamp;
+              record.reminderTimes = medicine.reminderTimes; // 传递提醒时间信息
               
               await this.saveMedicineRecord(record);
             }
