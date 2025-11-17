@@ -176,14 +176,14 @@ struct AddDiseasePage {
 }
 
 
-@ComponentV2
+@Component
 struct DiseaseTemplateCard
 {
-  @Param template: DiseaseTemplate|null=null;
-  @Param activeIds: string[] =[];
-  @Param isAlreadyAdded:boolean = false;
-  @Param selectedTemplateId: string = '';
-  @Event onTemplateSelect: (id: string) => void;
+  @Prop template: DiseaseTemplate|null=null;
+  @Prop activeIds: string[] =[];
+  @Prop isAlreadyAdded:boolean = false;
+  @Prop selectedTemplateId: string = '';
+  onTemplateSelect: (id: string) => void = () => {};
 
   build() {
     Row() {
