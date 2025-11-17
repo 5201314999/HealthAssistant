@@ -63,7 +63,7 @@ export struct HomePage {
     
     // 加载模板列表
     this.templates = BuiltInTemplates.getAllTemplates();
-    hilog.info(DOMAIN, TAG, 'Loaded templates count:%{public}d', this.templates.length);
+    hilog.info(DOMAIN, TAG, 'Loaded templates count222:%{public}d', this.templates.length);
     
     // 获取已激活的疾病模板
     const activeTemplatesFromDB = await db.getActiveDiseaseTemplates();

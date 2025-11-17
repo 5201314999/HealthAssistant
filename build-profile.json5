@@ -5,13 +5,26 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.cer",
+          "certpath": "/Users/user/.ohos/config/default_HealthAssistant_owYPigMshy5R7SbYKdc6llXjG4kDWdNinfUSdumohdE=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BF41F0957F1440504BCE3B562A92864F68256DD85E40D51C7ED7B9B6F5252D6CBE460246720B99B",
-          "profile": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.p7b",
+          "keyPassword": "0000001AED685323328E5C6F96DDC94675EF1735F404547ACACDA58A5F03FA93D677483627B3BCB6B6AE",
+          "profile": "/Users/user/.ohos/config/default_HealthAssistant_owYPigMshy5R7SbYKdc6llXjG4kDWdNinfUSdumohdE=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/user/.ohos/config/default_medicalAssistant_paJFkgt8zIE6tD_wU-wYm34aPHkQgkF34cZnufBx-0k=.p12",
-          "storePassword": "0000001B704D73D4AA6E3889F9BA941E61AF75247F42FF82C371379E187B71BEAA0CFAB2B2E2732F7A41DA"
+          "storeFile": "/Users/user/.ohos/config/default_HealthAssistant_owYPigMshy5R7SbYKdc6llXjG4kDWdNinfUSdumohdE=.p12",
+          "storePassword": "0000001AB09A6C5AD7F45BD8284115CBB36C7875A7265BCCE2035A871A6D916C96638B94B1F6EDCE56EE"
+        }
+      },
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "/Users/user/Documents/鸿蒙/HealthAssitant.p12",
+          "storePassword": "00000019C9D3F14DC7709579C305AFDD56CBB24A00717B3B532FC10FE4B805E2E7F3E79AA9231F81DB",
+          "keyAlias": "release_key",
+          "keyPassword": "000000198345D34EAFE461CECD0D60BB42CAE1D0412C8F9129FB60241848EF078E63E97119F83699B8",
+          "signAlg": "SHA256withECDSA",
+          "profile": "/Users/user/Documents/鸿蒙/HealthAssistantRelease.p7b",
+          "certpath": "/Users/user/Documents/鸿蒙/慢性病助手.cer"
         }
       }
     ],

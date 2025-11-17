@@ -87,7 +87,7 @@ export class NotificationManager {
         wants: [
           {
             deviceId:"",
-            bundleName: 'cn.myapp.medicalassistant',
+            bundleName: 'cn.fanjiongrong.medicalassistant',
             abilityName: 'EntryAbility',
             parameters: {
               action: 'medicine_reminder'
