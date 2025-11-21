@@ -653,8 +653,13 @@ export struct HomePage {
   TodayMedicineContent() {
     if (this.todayMedicineRecords.length === 0) {
       Column() {
-        Text('💊')
-          .fontSize(80)
+      //   Text('💊')
+      //     .fontSize(80)
+      //     .margin({ top: 100 })
+        Image($r('app.media.pill'))
+          .width(60)
+          .height(60)
+          .borderRadius(20)
           .margin({ top: 100 })
 
         Text('今日暂无用药记录')

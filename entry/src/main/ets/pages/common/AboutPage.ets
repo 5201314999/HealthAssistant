@@ -52,7 +52,7 @@ export struct AboutPage {
             Column({ space: 12 }) {
               Row() {
                 Column() {
-                  Image($r('app.media.startIcon'))
+                  Image($r('app.media.icon_startIcon'))
                     .width(80)
                     .height(80)
                     .borderRadius(20)

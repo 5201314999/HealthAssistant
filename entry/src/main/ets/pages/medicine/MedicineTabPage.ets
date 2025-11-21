@@ -167,8 +167,13 @@ export struct MedicineTabPage {
               .width('100%')
 
             Column() {
-              Text('💊')
-                .fontSize(60)
+            //   Text('💊')
+            //     .fontSize(60)
+            //     .margin({ top: 40 })
+              Image($r('app.media.pill'))
+                .width(60)
+                .height(60)
+                .borderRadius(20)
                 .margin({ top: 40 })
 
               Text('暂无用药提醒')
@@ -287,8 +292,14 @@ export struct MedicineTabPage {
           .margin({ left: 16, right: 16, top: 16 })
 
           Column() {
-            Text('💊')
-              .fontSize(60)
+            // Text('💊')
+            //   .fontSize(60)
+            //   .margin({ top: 40 })
+
+            Image($r('app.media.pill'))
+              .width(60)
+              .height(60)
+              .borderRadius(20)
               .margin({ top: 40 })
 
             Text('暂无药品记录')
