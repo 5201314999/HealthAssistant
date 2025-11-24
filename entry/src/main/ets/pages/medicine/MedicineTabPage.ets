@@ -22,17 +22,29 @@ export struct MedicineTabPage {
 
   // 监听 refreshKey 变化，触发刷新
   async onRefreshKeyChanged() {
-    if (this.refreshKey > 0) {
-      hilog.debug(DOMAIN, TAG, 'MedicineTabPage refreshKey changed, reloading data');
-      await this.loadData();
-    }
+    // 每次 refreshKey 变化都刷新，包括从 0 变化的情况
+    hilog.info(DOMAIN, TAG, '🔄 MedicineTabPage refreshKey changed to: %{public}d, reloading data...', this.refreshKey);
+    await this.loadData();
+    hilog.info(DOMAIN, TAG, '✅ Data reloaded: %{public}d medicines, %{public}d today records', 
+      this.medicineList.length, this.todayRecords.length);
   }
 
   async loadData() {
     try {
       this.medicineList = await HealthRecordDatabase.getInstance().getMedicineList();
-      this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(Date.now());
-      hilog.info(DOMAIN, TAG, 'Data loaded: %{public}d medicines, %{public}d today records', 
+      
+      // 获取今天的日期范围（从今天00:00:00到23:59:59）
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStart = today.getTime();
+      const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
+      
+      hilog.debug(DOMAIN, TAG, '📅 Loading today records from %{public}s to %{public}s',
+        new Date(todayStart).toLocaleString('zh-CN'),
+        new Date(todayEnd).toLocaleString('zh-CN'));
+      
+      this.todayRecords = await HealthRecordDatabase.getInstance().getMedicineRecords(todayStart, todayEnd);
+      hilog.info(DOMAIN, TAG, '📊 Data loaded: %{public}d medicines, %{public}d today records', 
         this.medicineList.length, this.todayRecords.length);
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'Failed to load data: %{public}s', JSON.stringify(err));
@@ -103,7 +115,10 @@ export struct MedicineTabPage {
       }
       .barMode(BarMode.Fixed)
       .onChange((index: number) => {
+        hilog.debug(DOMAIN, TAG, 'Tab changed to: %{public}d', index);
         this.currentTab = index;
+        // Tab 切换时重新加载数据，确保显示最新内容
+        this.loadData();
       })
       .layoutWeight(1)
     }

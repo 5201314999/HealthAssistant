@@ -146,6 +146,12 @@ export class NotificationManager {
       const error = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'Create medicine reminder failed: code:%{public}d, message:%{public}s', error.code, error.message);
       
+      // 如果是通知未启用的错误码（1700001）
+      if (error.code === 1700001) {
+        hilog.error(DOMAIN, TAG, 'Notification permission not granted. Please enable notification permission in settings.');
+        return false;
+      }
+      
       // 如果是超过限制的错误码（1700002）
       if (error.code === 1700002) {
         hilog.warn(DOMAIN, TAG, 'Reminder limit exceeded, attempting to clean old reminders');

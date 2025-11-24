@@ -30,9 +30,10 @@ struct MedicineManagePage {
     console.log(`Data loaded: ${this.medicineList.length} medicines, ${this.todayRecords.length} today records`);
   }
 
-  onPageShow() {
-    console.log('MedicineManagePage onPageShow');
-    this.loadData();
+  async onPageShow() {
+    console.log('MedicineManagePage onPageShow - Reloading data...');
+    await this.loadData();
+    console.log('MedicineManagePage onPageShow - Data reloaded');
   }
 
   async toggleRecordStatus(record: MedicineRecord) {

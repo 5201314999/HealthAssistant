@@ -6,6 +6,8 @@ import { MedicineData, RemindTime } from '../../models/MedicineData';
 import { promptAction } from '@kit.ArkUI';
 import { NotificationManager, RemainState } from '../../utils/NotificationManager';
 import common from '@ohos.app.ability.common';
+import { abilityAccessCtrl, Want, Permissions } from '@kit.AbilityKit';
+import notificationManager from '@ohos.notificationManager';
 
 const TAG = 'AddMedicinePage';
 const DOMAIN = 0x0000;
@@ -40,9 +42,18 @@ struct AddMedicinePage {
   @State dosage: string = '';
   @State customTimes: CustomTimeItem[] = []; // 改用自定义时间列表
   @State stock: string = '';
-  @State startDate: number = Date.now();
-  @State endDate: number = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  @State startDate: number = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime();
+  })();
+  @State endDate: number = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime() + 30 * 24 * 60 * 60 * 1000;
+  })();
   @State note: string = '';
+  @State hasPermission: boolean = true; // 权限状态
 
   // 快捷时间选项
   private quickTimeOptions: QuickTimeOption[] = [
@@ -58,6 +69,120 @@ struct AddMedicinePage {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
 
+  // 页面即将显示时检查权限
+  async aboutToAppear() {
+    this.hasPermission = await this.checkPermissionStatus();
+  }
+
+  // 检查权限状态和通知启用状态
+  async checkPermissionStatus(): Promise<boolean> {
+    try {
+      const atManager = abilityAccessCtrl.createAtManager();
+      const context = getContext(this) as common.UIAbilityContext;
+      
+      // 检查权限
+      const grantStatus = await atManager.checkAccessToken(
+        context.applicationInfo.accessTokenId,
+        'ohos.permission.PUBLISH_AGENT_REMINDER'
+      );
+      
+      if (grantStatus !== abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
+        return false;
+      }
+      
+      // 检查通知是否启用
+      const isEnabled = await notificationManager.isNotificationEnabled();
+      return isEnabled;
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Check permission failed: %{public}s', JSON.stringify(err));
+      return false;
+    }
+  }
+
+  // 确保权限已授予并且通知已启用
+  async ensurePermission(): Promise<void> {
+    try {
+      const atManager = abilityAccessCtrl.createAtManager();
+      const context = getContext(this) as common.UIAbilityContext;
+      const permissions: Array<Permissions> = ['ohos.permission.PUBLISH_AGENT_REMINDER'];
+      
+      // 第一步：检查权限
+      const grantStatus = await atManager.checkAccessToken(
+        context.applicationInfo.accessTokenId,
+        permissions[0]
+      );
+      
+      hilog.info(DOMAIN, TAG, '🔍 Step 1 - Checking permission, status: %{public}d', grantStatus);
+      
+      if (grantStatus !== abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
+        // 权限未授予，尝试请求
+        hilog.info(DOMAIN, TAG, '⚠️ Permission not granted, requesting...');
+        const result = await atManager.requestPermissionsFromUser(context, permissions);
+        
+        if (result.authResults[0] !== abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
+          hilog.warn(DOMAIN, TAG, '❌ Permission denied after request');
+          this.hasPermission = false;
+          return;
+        }
+        hilog.info(DOMAIN, TAG, '✅ Permission granted after request');
+      } else {
+        hilog.info(DOMAIN, TAG, '✅ Permission already granted');
+      }
+      
+      // 第二步：检查通知是否启用
+      try {
+        const isEnabled = await notificationManager.isNotificationEnabled();
+        hilog.info(DOMAIN, TAG, '🔍 Step 2 - Notification enabled status: %{public}s', isEnabled ? 'true' : 'false');
+        
+        if (!isEnabled) {
+          hilog.warn(DOMAIN, TAG, '⚠️ Notification is disabled, requesting to enable...');
+          // 请求启用通知
+          await notificationManager.requestEnableNotification(context);
+          hilog.info(DOMAIN, TAG, '✅ Notification enable request sent');
+          
+          // 再次检查
+          const isEnabledAfter = await notificationManager.isNotificationEnabled();
+          hilog.info(DOMAIN, TAG, '🔍 Notification status after request: %{public}s', isEnabledAfter ? 'true' : 'false');
+          this.hasPermission = isEnabledAfter;
+        } else {
+          hilog.info(DOMAIN, TAG, '✅ Notification already enabled');
+          this.hasPermission = true;
+        }
+      } catch (notifyErr) {
+        hilog.error(DOMAIN, TAG, '❌ Check/enable notification failed: %{public}s', JSON.stringify(notifyErr));
+        this.hasPermission = false;
+      }
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, '❌ Ensure permission failed: %{public}s', JSON.stringify(err));
+      this.hasPermission = false;
+    }
+  }
+
+  // 打开系统设置
+  async openPermissionSettings() {
+    try {
+      const context = getContext(this) as common.UIAbilityContext;
+      
+      // 跳转到应用详情页
+      const wantInfo: Want = {
+        bundleName: 'com.huawei.hmos.settings',
+        abilityName: 'com.huawei.hmos.settings.MainAbility',
+        uri: 'application_info_entry',
+        parameters: {
+          pushParams: context.applicationInfo.name
+        }
+      };
+      
+      await context.startAbility(wantInfo);
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'Open settings failed: %{public}s', JSON.stringify(err));
+      promptAction.showToast({ 
+        message: '请在"设置 > 应用 > 慢性病助手 > 权限"中手动开启通知权限',
+        duration: 3000
+      });
+    }
+  }
+
   async saveData() {
     hilog.debug(DOMAIN, TAG, 'saveData called');
     if (!this.medicineName) {
@@ -69,6 +194,9 @@ struct AddMedicinePage {
       promptAction.showToast({ message: '请添加至少一个服用时间' });
       return;
     }
+
+    // 在保存前再次检查并请求权限
+    await this.ensurePermission();
 
     const medicine = new MedicineData();
     medicine.name = this.medicineName;
@@ -88,6 +216,11 @@ struct AddMedicinePage {
     medicine.endDate = this.endDate;
     medicine.note = this.note;
 
+    hilog.info(DOMAIN, TAG, '💊 Saving medicine: %{public}s, startDate: %{public}s, endDate: %{public}s',
+      medicine.name,
+      new Date(medicine.startDate).toLocaleString('zh-CN'),
+      new Date(medicine.endDate).toLocaleString('zh-CN'));
+
     await HealthRecordDatabase.getInstance().saveMedicine(medicine);
     
     // 生成今日用药记录
@@ -97,21 +230,39 @@ struct AddMedicinePage {
     const reminderResult = await this.createMedicineReminders(medicine);
     
     // 根据提醒创建结果显示不同的消息
-    let message = '药品保存成功';
     if (reminderResult.permissionDenied) {
-      message += '，但提醒创建失败。请在系统设置中开启通知权限';
-      promptAction.showToast({ message: message, duration: 3000 });
-    } else if (reminderResult.success > 0 && reminderResult.failed === 0) {
-      message += '，已设置用药提醒';
-      promptAction.showToast({ message: message });
-    } else if (reminderResult.success > 0 && reminderResult.failed > 0) {
-      message += `，已为 ${reminderResult.success} 个时间设置提醒`;
-      promptAction.showToast({ message: message });
+      // 权限被拒绝，显示对话框引导用户开启权限
+      hilog.warn(DOMAIN, TAG, 'Permission denied, showing alert to user');
+      this.getUIContext().showAlertDialog({
+        title: '药品已保存',
+        message: '通知权限未开启，无法创建用药提醒。\n\n请按以下步骤开启：\n1. 点击"去设置"按钮\n2. 找到"通知管理"\n3. 开启"允许通知"',
+        primaryButton: {
+          value: '去设置',
+          action: () => {
+            this.openPermissionSettings();
+          }
+        },
+        secondaryButton: {
+          value: '稍后再说',
+          action: () => {
+            router.back();
+          }
+        }
+      });
     } else {
+      // 权限正常，显示普通提示
+      let message = '药品保存成功';
+      if (reminderResult.success > 0 && reminderResult.failed === 0) {
+        message += '，已设置用药提醒';
+        hilog.info(DOMAIN, TAG, '✅ All reminders created successfully');
+      } else if (reminderResult.success > 0 && reminderResult.failed > 0) {
+        message += `，已为 ${reminderResult.success} 个时间设置提醒`;
+        hilog.warn(DOMAIN, TAG, '⚠️ Partial success: %{public}d succeeded, %{public}d failed', 
+          reminderResult.success, reminderResult.failed);
+      }
       promptAction.showToast({ message: message });
+      router.back();
     }
-    
-    router.back();
   }
 
   // 添加快捷时间
@@ -239,6 +390,16 @@ struct AddMedicinePage {
     }
     
     hilog.info(DOMAIN, TAG, 'Reminder creation complete: %{public}d succeeded, %{public}d failed', successCount, failCount);
+    
+    // 如果所有提醒都创建失败，很可能是权限问题
+    if (successCount === 0 && failCount > 0) {
+      // 重新检查权限状态
+      const hasPermission = await this.checkPermissionStatus();
+      if (!hasPermission) {
+        permissionDenied = true;
+      }
+    }
+    
     const result: ReminderCreationResult = {
       success: successCount,
       failed: failCount,
@@ -254,6 +415,8 @@ struct AddMedicinePage {
       end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
       selected: new Date(this.startDate),
       onDateAccept: (value:Date) => {
+        // 将选择的日期设置为当天 00:00:00
+        value.setHours(0, 0, 0, 0);
         this.startDate = value.getTime();
         
         // 如果开始日期大于结束日期，自动调整结束日期
@@ -271,13 +434,21 @@ struct AddMedicinePage {
       end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 一年后
       selected: new Date(this.endDate),
       onDateAccept: (value) => {
+        // 将选择的日期设置为当天 00:00:00
+        value.setHours(0, 0, 0, 0);
         this.endDate = value.getTime();
         
         // 如果结束日期小于开始日期，自动调整开始日期
         if (this.endDate < this.startDate) {
-          this.startDate = this.endDate - 30 * 24 * 60 * 60 * 1000; // 默认30天前
-          if (this.startDate < Date.now()) {
-            this.startDate = Date.now();
+          // 调整开始日期也要是 00:00:00
+          const adjustedStart = new Date(this.endDate - 30 * 24 * 60 * 60 * 1000);
+          adjustedStart.setHours(0, 0, 0, 0);
+          this.startDate = adjustedStart.getTime();
+          
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (this.startDate < today.getTime()) {
+            this.startDate = today.getTime();
           }
         }
       }
@@ -390,6 +561,38 @@ struct AddMedicinePage {
               .fontWeight(FontWeight.Medium)
               .fontColor('#1F1F1F')
               .alignSelf(ItemAlign.Start)
+
+            // 权限警告提示
+            if (!this.hasPermission) {
+              Row() {
+                // Image($r('sys.media.ohos_ic_public_warn'))
+                //   .width(16)
+                //   .height(16)
+                //   .fillColor('#FF9800')
+                //
+                Text('通知权限未开启，将无法收到用药提醒')
+                  .fontSize(12)
+                  .fontColor('#FF9800')
+                  .layoutWeight(1)
+                  .margin({ left: 4 })
+                
+                Text('去开启')
+                  .fontSize(12)
+                  .fontColor('#2196F3')
+                  .fontWeight(FontWeight.Medium)
+                  .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+                  .backgroundColor('#E3F2FD')
+                  .borderRadius(4)
+                  .margin({ left: 8 })
+                  .onClick(() => {
+                    this.openPermissionSettings();
+                  })
+              }
+              .width('100%')
+              .padding(12)
+              .backgroundColor('#FFF3E0')
+              .borderRadius(8)
+            }
 
             // 快捷时间选择
             Column({ space: 8 }) {
