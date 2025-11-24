@@ -1,7 +1,7 @@
 {
   "app": {
     "bundleName": "cn.fanjiongrong.medicalassistant",
-    "patchVersionCode": 2000058,
+    "patchVersionCode": 2000060,
     "versionCode": 1000000
   },
   "module": {

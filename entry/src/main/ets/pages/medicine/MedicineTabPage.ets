@@ -277,6 +277,7 @@ export struct MedicineTabPage {
             .padding({ bottom: 16 })
           }
           .width('100%')
+          .constraintSize({minHeight:'100%'})
         }
         .layoutWeight(1)
       }
@@ -414,7 +415,7 @@ export struct MedicineTabPage {
           .fontColor('#212121')
           .decoration({ type: record.taken ? TextDecorationType.LineThrough : TextDecorationType.None })
 
-        Text(this.getTimeName(record.time))
+        Text(this.formatRecordTime(record))
           .fontSize(12)
           .fontColor('#757575')
 
@@ -484,15 +485,20 @@ export struct MedicineTabPage {
           .fontColor('#757575')
 
         Text(medicine.frequency.map((f: string) => {
-          const timeName = this.getTimeName(f);
           const reminderTime = medicine.reminderTimes[f];
           if (reminderTime) {
             const hour = String(reminderTime.hour).padStart(2, '0');
             const minute = String(reminderTime.minute).padStart(2, '0');
-            return `${timeName}(${hour}:${minute})`;
+            return `${hour}:${minute}`;
+          }
+          // 如果没有提醒时间，尝试获取时间名称
+          const timeName = this.getTimeName(f);
+          // 如果是 time_0 这种格式，就不显示
+          if (timeName.startsWith('time_')) {
+            return '';
           }
           return timeName;
-        }).join('、'))
+        }).filter(t => t !== '').join('、'))
           .fontSize(13)
           .fontColor($r('app.color.primary'))
       }
@@ -538,6 +544,25 @@ export struct MedicineTabPage {
       default:
         return time;
     }
+  }
+
+  // 格式化记录的时间显示
+  formatRecordTime(record: MedicineRecord): string {
+    // 如果有具体的提醒时间，显示具体时间
+    if (record.reminderTimes && record.reminderTimes[record.time]) {
+      const reminderTime = record.reminderTimes[record.time];
+      const hour = String(reminderTime.hour).padStart(2, '0');
+      const minute = String(reminderTime.minute).padStart(2, '0');
+      return `${hour}:${minute}`;
+    }
+    
+    // 如果是 time_0 这种格式，只显示"服药时间"
+    if (record.time.startsWith('time_')) {
+      return '服药时间';
+    }
+    
+    // 否则使用原来的名称
+    return this.getTimeName(record.time);
   }
 
   getTodayDateString(): string {
