@@ -414,6 +414,10 @@ export struct HomePage {
               })
               .height(160)
               .margin({ left: 16, right: 16 })
+              .indicator(false)
+              .loop(true)
+              .cachedCount(1)
+              .disableSwipe(false)
 
               // 指示器
               if (this.healthIndicators.length > 1) {
@@ -599,6 +603,9 @@ export struct HomePage {
     }
     .layoutWeight(1)
     .backgroundColor('#F5F5F5')
+    .scrollBar(BarState.Auto)
+    .edgeEffect(EdgeEffect.Spring)
+    .friction(0.6)
   }
 
   @Builder
@@ -718,6 +725,9 @@ export struct HomePage {
         .width('100%')
       }
       .layoutWeight(1)
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .friction(0.6)
     }
   }
 

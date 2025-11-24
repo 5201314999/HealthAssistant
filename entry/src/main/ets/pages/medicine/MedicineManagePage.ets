@@ -136,7 +136,7 @@ struct MedicineManagePage {
       }
       .width('100%')
       .height('100%')
-    } else {
+      } else {
       Scroll() {
         Column({ space: 12 }) {
           // 统计信息
@@ -192,6 +192,9 @@ struct MedicineManagePage {
       .width('100%')
       .height('100%')
       .backgroundColor('#F5F5F5')
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .friction(0.6)
     }
   }
 
@@ -227,6 +230,13 @@ struct MedicineManagePage {
       .height('100%')
       .padding(16)
       .backgroundColor('#F5F5F5')
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .friction(0.6)
+      .nestedScroll({
+        scrollForward: NestedScrollMode.PARENT_FIRST,
+        scrollBackward: NestedScrollMode.SELF_FIRST
+      })
     }
   }
 

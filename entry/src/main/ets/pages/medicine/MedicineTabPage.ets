@@ -280,6 +280,9 @@ export struct MedicineTabPage {
           .constraintSize({minHeight:'100%'})
         }
         .layoutWeight(1)
+        .scrollBar(BarState.Auto)
+        .edgeEffect(EdgeEffect.Spring)
+        .friction(0.6)
       }
     }
     .width('100%')
@@ -389,6 +392,9 @@ export struct MedicineTabPage {
             .padding({ left: 16, right: 16, top: 16, bottom: 16 })
           }
           .layoutWeight(1)
+          .scrollBar(BarState.Auto)
+          .edgeEffect(EdgeEffect.Spring)
+          .friction(0.6)
         }
         .width('100%')
         .height('100%')

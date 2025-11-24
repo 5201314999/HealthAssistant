@@ -268,6 +268,9 @@ struct DataEntryPage {
       }
       .layoutWeight(1)
       .backgroundColor('#F5F5F5')
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .friction(0.6)
 
       // 底部保存按钮
       Column() {

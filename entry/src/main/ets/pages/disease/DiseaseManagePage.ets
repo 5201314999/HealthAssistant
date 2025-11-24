@@ -149,6 +149,13 @@ struct DiseaseManagePage {
       .height('100%')
       .padding(16)
       .backgroundColor('#F5F5F5')
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .friction(0.6)
+      .nestedScroll({
+        scrollForward: NestedScrollMode.PARENT_FIRST,
+        scrollBackward: NestedScrollMode.SELF_FIRST
+      })
     }
   }
 
